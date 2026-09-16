@@ -1280,9 +1280,13 @@ function filterBons(f,el){
 
 async function openDetail(id){
   currentBonId=id
-  // Toujours recharger les données fraîches avant d'ouvrir
-  await loadBons()
   resetChrono()
+  // Utiliser les données en mémoire d'abord (instantané)
+  // puis recharger en arrière-plan
+  loadBons().then(()=>{
+    const bFresh=allBons.find(x=>x.id===id)
+    if(bFresh) updateDetailBadges(bFresh)
+  })
   const b=allBons.find(x=>x.id===id);if(!b) return
   document.getElementById('d-titre').textContent=b.titre
   document.getElementById('d-badges').innerHTML=badge(b.statut)+' '+badge(b.priorite)
@@ -2050,11 +2054,11 @@ async function showPage(name,el){
     document.querySelectorAll('.filter-tab').forEach(t=>t.classList.remove('active'))
     const allTab=document.querySelector('.filter-tab[onclick*="all"]')
     if(allTab) allTab.classList.add('active')
-    await loadBons()
-    await loadTechs()
-    await loadBats()
-    populateFilterBat()
+    // Afficher immédiatement avec les données en mémoire
     renderBonsTable()
+    populateFilterBat()
+    // Recharger en arrière-plan
+    loadBons().then(()=>{ renderBonsTable(); populateFilterBat() })
   }
   if(name==='techniciens') renderTechs()
   if(name==='batiments'){await loadBons();renderBatiments()}
@@ -3261,6 +3265,12 @@ async function loadAndRenderControles(){
   }catch(e){
     console.error('loadControles error:',e)
   }
+}
+
+
+function updateDetailBadges(b){
+  const badgesEl = document.getElementById('d-badges')
+  if(badgesEl) badgesEl.innerHTML = badge(b.statut)+' '+badge(b.priorite)
 }
 
 if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{})
