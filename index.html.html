@@ -3259,33 +3259,37 @@ async function renderMesMissions(){
 
 
 async function loadAndRenderControles(){
-  // Charger depuis Supabase si disponible
-  const {data, error} = await sb.from('controles').select('*').order('next_date')
-  if(!error && data){
-    // Fusionner avec localStorage pour ne pas perdre les données locales
-    const local = getControles()
-    if(local.length > 0 && data.length === 0){
-      // Migrer localStorage vers Supabase
-      for(const c of local){
-        await sb.from('controles').upsert({
-          id: c.id,
-          type: c.type,
-          batiment_id: c.batiment_id||null,
-          last_date: c.last_date||null,
-          next_date: c.next_date||null,
-          resultat: c.resultat||'conforme',
-          organisme: c.organisme||null,
-          commentaire: c.commentaire||null,
-          frequence_jours: c.frequence_jours||365
-        })
+  try {
+    // Charger depuis Supabase
+    const {data, error} = await sb.from('controles').select('*,batiments(nom)').order('next_date')
+    if(!error && data){
+      // Migrer localStorage si Supabase est vide
+      const local = getControles()
+      if(local.length > 0 && data.length === 0){
+        for(const c of local){
+          await sb.from('controles').upsert({
+            id: c.id, type: c.type, batiment_id: c.batiment_id||null,
+            last_date: c.last_date||null, next_date: c.next_date||null,
+            resultat: c.resultat||'conforme', organisme: c.organisme||null,
+            commentaire: c.commentaire||null, frequence_jours: c.frequence_jours||365
+          })
+        }
+        const {data:data2} = await sb.from('controles').select('*,batiments(nom)').order('next_date')
+        if(data2){ saveControles(data2); renderControlesData(data2); return }
+      } else {
+        saveControles(data)
+        renderControlesData(data)
+        return
       }
-      // Recharger
-      const {data:data2} = await sb.from('controles').select('*').order('next_date')
-      if(data2) saveControles(data2)
-    } else {
-      saveControles(data)
     }
-  }
+  } catch(e){ console.error('loadControles error:', e) }
+  // Fallback localStorage
+  renderControles()
+}
+
+function renderControlesData(data){
+  // Injecter dans localStorage puis rendre
+  saveControles(data)
   renderControles()
 }
 
