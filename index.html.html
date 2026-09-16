@@ -1281,12 +1281,8 @@ function filterBons(f,el){
 async function openDetail(id){
   currentBonId=id
   resetChrono()
-  // Utiliser les données en mémoire d'abord (instantané)
-  // puis recharger en arrière-plan
-  loadBons().then(()=>{
-    const bFresh=allBons.find(x=>x.id===id)
-    if(bFresh) updateDetailBadges(bFresh)
-  })
+  // Recharger en arrière-plan sans bloquer
+  loadBons()
   const b=allBons.find(x=>x.id===id);if(!b) return
   document.getElementById('d-titre').textContent=b.titre
   document.getElementById('d-badges').innerHTML=badge(b.statut)+' '+badge(b.priorite)
@@ -2061,7 +2057,7 @@ async function showPage(name,el){
     loadBons().then(()=>{ renderBonsTable(); populateFilterBat() })
   }
   if(name==='techniciens') renderTechs()
-  if(name==='batiments'){await loadBons();renderBatiments()}
+  if(name==='batiments') renderBatiments()
   if(name==='stats'){renderStats();setTimeout(renderStatsCouts,100)}
   if(name==='historique') renderHistorique()
   if(name==='carte'){setTimeout(()=>{const m=document.getElementById('map');if(m)m.style.height='480px';initCarte()},200)}
@@ -2808,7 +2804,7 @@ async function mettreAJourCoutsPieces(totalPieces){
     cout_pieces:parseFloat(totalPieces.toFixed(2)),
     cout_total:coutTotal
   }).eq('id',currentBonId)
-  await loadBons()
+  loadBons() // en arrière-plan
 }
 
 async function afficherCoutTotal(){
@@ -2944,7 +2940,7 @@ async function confirmerAccepterMission(){
   closeModal('mission')
   showToast('🚗 Mission acceptée ! '+( kmTrajet>0 ? kmTrajet+'km — Coût trajet estimé: '+coutTrajet.toFixed(2)+'€' : 'Trajet non calculé'))
   chronoStart()
-  await loadBons()
+  loadBons() // en arrière-plan
   await openDetail(currentBonId)
 }
 
