@@ -2082,8 +2082,13 @@ async function showPage(name,el){
   if(name==='stats'){renderStats();setTimeout(renderStatsCouts,100)}
   if(name==='controle'){
     populateControleSelects()
-    renderControles() // Afficher immédiatement depuis localStorage
-    loadAndRenderControles() // Puis synchroniser avec Supabase en arrière-plan
+    // Forcer le rendu après que le DOM soit à jour
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{
+        renderControles()
+        loadAndRenderControles()
+      })
+    })
   }
   if(name==='historique') renderHistorique()
   if(name==='carte'){setTimeout(()=>{const m=document.getElementById('map');if(m)m.style.height='480px';initCarte()},200)}
@@ -2560,8 +2565,13 @@ function showPage(name, el){
   if(name==='carte') setTimeout(()=>{const m=document.getElementById('map');if(m)m.style.height='480px';initCarte()},200)
   if(name==='controle'){
     populateControleSelects()
-    renderControles() // Afficher immédiatement depuis localStorage
-    loadAndRenderControles() // Puis synchroniser avec Supabase en arrière-plan
+    // Forcer le rendu après que le DOM soit à jour
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{
+        renderControles()
+        loadAndRenderControles()
+      })
+    })
   }
 }
 
