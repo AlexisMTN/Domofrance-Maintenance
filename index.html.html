@@ -2062,7 +2062,10 @@ async function showPage(name,el){
   if(name==='historique') renderHistorique()
   if(name==='carte'){setTimeout(()=>{const m=document.getElementById('map');if(m)m.style.height='480px';initCarte()},200)}
   if(name==='planning') renderCalendar()
-  if(name==='controle') populateControleSelects()
+  if(name==='controle'){
+    populateControleSelects()
+    setTimeout(loadAndRenderControles, 100)
+  }
 }
 
 function openModal(id){document.getElementById('modal-'+id).style.display='flex'}
@@ -3228,6 +3231,36 @@ async function renderMesMissions(){
   })
   el.innerHTML=''
   rows.forEach(r=>el.appendChild(r))
+}
+
+
+async function loadAndRenderControles(){
+  // Afficher d'abord ce qu'on a en localStorage
+  renderControles()
+  // Puis charger depuis Supabase
+  try{
+    const {data,error}=await sb.from('controles').select('*').order('next_date')
+    if(!error&&data&&data.length>0){
+      saveControles(data)
+      renderControles()
+    } else if(!error&&data&&data.length===0){
+      // Supabase vide - migrer depuis localStorage
+      const local=getControles()
+      if(local.length>0){
+        for(const c of local){
+          await sb.from('controles').upsert({
+            id:c.id,type:c.type,batiment_id:c.batiment_id||null,
+            last_date:c.last_date||null,next_date:c.next_date||null,
+            resultat:c.resultat||'conforme',organisme:c.organisme||null,
+            commentaire:c.notes||null,frequence_jours:c.freq_days||365
+          })
+        }
+        renderControles()
+      }
+    }
+  }catch(e){
+    console.error('loadControles error:',e)
+  }
 }
 
 if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{})
