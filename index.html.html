@@ -3133,7 +3133,14 @@ function fermerChoixArret(){const el=document.getElementById('modal-choix-arret'
 
 // ── RAFRAICHISSEMENT CENTRAL ──
 async function rafraichirTout(){
-  await rafraichirTout()
+  await loadBons()
+  await loadBonPhotos()
+  renderDashboard()
+  renderBonsTable()
+  updateUrgentBadge()
+  // Rafraîchir la page active si besoin
+  const pageActive = document.querySelector('.page.active')
+  if(pageActive&&pageActive.id==='page-bons') renderBonsTable()
 }
 
 
@@ -3250,7 +3257,6 @@ async function renderMesMissions(){
 // ── NOTIFICATIONS PUSH ──
 
 
-async 
 
 if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{})
 
