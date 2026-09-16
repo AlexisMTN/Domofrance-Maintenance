@@ -238,7 +238,13 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gray);color:va
           <div class="stat-card"><div class="stat-icon si-green">✅</div><div><div class="stat-val" id="stat-termines">0</div><div class="stat-label">Terminés</div></div></div>
         </div>
         <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px">
-          <div class="card">
+          <div class="card" id="dash-mes-missions-card" style="margin-bottom:16px;display:none">
+              <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+                <span style="font-weight:700;font-size:14px">🚗 Mes missions actives</span>
+              </div>
+              <div id="dash-mes-missions" style="padding:14px 18px"></div>
+            </div>
+            <div class="card">
             <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
               <span style="font-weight:700;font-size:14px">Bons récents</span>
               <span style="font-size:12px;color:var(--blue);cursor:pointer;font-weight:600" onclick="showPage('bons',document.querySelectorAll('.nav-item')[1])">Voir tout →</span>
@@ -1244,6 +1250,7 @@ function renderDashboard(){
   document.getElementById('stat-urgents').textContent=allBons.filter(b=>b.priorite==='urgence'&&b.statut!=='termine').length
   document.getElementById('stat-encours').textContent=allBons.filter(b=>b.statut==='en_cours').length
   document.getElementById('stat-termines').textContent=allBons.filter(b=>b.statut==='termine').length
+  renderMesMissions()
   const sc={disponible:'#66BB6A',en_intervention:'#FFA726',hors_service:'#B0BEC5'}
   const sl={disponible:'Disponible',en_intervention:'En intervention',hors_service:'Hors service'}
   document.getElementById('dash-bons').innerHTML=allBons.filter(b=>b.statut!=='termine'&&b.statut!=='annule').slice(0,6).map(b=>{
@@ -3177,6 +3184,39 @@ function demarrerOuReprendre(){
 
 function ouvrirAttenteForBon(id){currentBonId=id;ouvrirAttente()}
 function reprendreForBon(id){currentBonId=id;reprendreIntervention()}
+
+async function renderMesMissions(){
+  const el=document.getElementById('dash-mes-missions')
+  const card=document.getElementById('dash-mes-missions-card')
+  if(!el||!card) return
+  const {data:{user}}=await sb.auth.getUser()
+  if(!user){card.style.display='none';return}
+  const tech=allTechs.find(t=>t.email&&t.email.toLowerCase()===user.email.toLowerCase())
+  const mesBons=tech
+    ?allBons.filter(b=>b.technicien_id===tech.id&&(b.statut==='en_cours'||b.statut==='en_attente'))
+    :[]
+  if(mesBons.length===0){card.style.display='none';return}
+  card.style.display=''
+  const rows=[]
+  mesBons.forEach(b=>{
+    const bat=allBats.find(x=>x.id===b.batiment_id)
+    const isEnCours=b.statut==='en_cours'
+    const mins=b.date_debut?Math.floor((Date.now()-new Date(b.date_debut))/60000):0
+    const duree=mins<60?mins+'min':Math.floor(mins/60)+'h'+String(mins%60).padStart(2,'0')
+    const color=isEnCours?'var(--orange)':'var(--yellow)'
+    const label=isEnCours?'En cours depuis '+duree:'En attente'
+    const div=document.createElement('div')
+    div.style.cssText='display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--gray);border-radius:10px;margin-bottom:8px;cursor:pointer;border-left:3px solid '+color
+    div.innerHTML='<div style="flex:1"><div style="font-size:13px;font-weight:600">'+b.titre+'</div>'
+      +'<div style="font-size:11px;color:var(--text3)">'+(bat?bat.nom:'—')+'</div></div>'
+      +'<div style="font-size:11px;font-weight:600;color:'+color+'">'+label+'</div>'
+    div.addEventListener('click',()=>openDetail(b.id))
+    rows.push(div)
+  })
+  el.innerHTML=''
+  rows.forEach(r=>el.appendChild(r))
+}
+
 if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{})
 
 // ── FILTRE PAR BATIMENT ──
