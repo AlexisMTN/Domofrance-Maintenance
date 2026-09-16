@@ -2080,7 +2080,7 @@ async function showPage(name,el){
   if(name==='techniciens') renderTechs()
   if(name==='batiments') renderBatiments()
   if(name==='stats'){renderStats();setTimeout(renderStatsCouts,100)}
-  if(name==='controle'){populateControleSelects();renderControles()}
+  if(name==='controle'){populateControleSelects();loadAndRenderControles()}
   if(name==='historique') renderHistorique()
   if(name==='carte'){setTimeout(()=>{const m=document.getElementById('map');if(m)m.style.height='480px';initCarte()},200)}
   if(name==='planning') renderCalendar()
@@ -2554,7 +2554,7 @@ function showPage(name, el){
   if(name==='stats'){renderStats();setTimeout(renderStatsCouts,100)}
   if(name==='historique') renderHistorique()
   if(name==='carte') setTimeout(()=>{const m=document.getElementById('map');if(m)m.style.height='480px';initCarte()},200)
-  if(name==='controle'){populateControleSelects();renderControles()}
+  if(name==='controle'){populateControleSelects();loadAndRenderControles()}
 }
 
 // Override openModal pour contrôle
@@ -3257,6 +3257,37 @@ async function renderMesMissions(){
 // ── NOTIFICATIONS PUSH ──
 
 
+
+async function loadAndRenderControles(){
+  // Charger depuis Supabase si disponible
+  const {data, error} = await sb.from('controles').select('*').order('next_date')
+  if(!error && data){
+    // Fusionner avec localStorage pour ne pas perdre les données locales
+    const local = getControles()
+    if(local.length > 0 && data.length === 0){
+      // Migrer localStorage vers Supabase
+      for(const c of local){
+        await sb.from('controles').upsert({
+          id: c.id,
+          type: c.type,
+          batiment_id: c.batiment_id||null,
+          last_date: c.last_date||null,
+          next_date: c.next_date||null,
+          resultat: c.resultat||'conforme',
+          organisme: c.organisme||null,
+          commentaire: c.commentaire||null,
+          frequence_jours: c.frequence_jours||365
+        })
+      }
+      // Recharger
+      const {data:data2} = await sb.from('controles').select('*').order('next_date')
+      if(data2) saveControles(data2)
+    } else {
+      saveControles(data)
+    }
+  }
+  renderControles()
+}
 
 if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{})
 
