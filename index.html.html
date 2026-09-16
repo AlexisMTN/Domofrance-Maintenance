@@ -1643,7 +1643,34 @@ async function genererEtEnvoyerPDF(bon,photos,comments,auteur,dureeH){
   if(comments.length>0){
     if(y>240){doc.addPage();y=margin}
     doc.setFillColor(...grisClair);doc.roundedRect(margin,y,W-2*margin,6,1,1,'F')
-    doc.setTextColor(...marine);doc.setFont('helvetica','bold');doc.setFontSize(9)
+    // ── SECTION COUTS ──
+    const {data:pdfPieces}=await sb.from('pieces').select('*').eq('bon_id',bon.id).order('created_at')
+    const pdfTech=allTechs.find(t=>t.id===bon.technicien_id)
+    const pdfTauxH=pdfTech?.taux_horaire||0
+    const pdfCoutMO=(dureeH||0)*pdfTauxH
+    const pdfCoutTrajet=bon.cout_trajet||0
+    const pdfTotalPieces=(pdfPieces||[]).reduce((s,p)=>s+(p.quantite*p.prix_unitaire),0)
+    const pdfCoutTotal=pdfCoutMO+pdfCoutTrajet+pdfTotalPieces
+    if(pdfCoutTotal>0||(pdfPieces&&pdfPieces.length>0)){
+      if(y>230){doc.addPage();y=margin}
+      doc.setFillColor(...grisClair);doc.roundedRect(margin,y,W-2*margin,6,1,1,'F')
+      doc.setTextColor(...marine);doc.setFont('helvetica','bold');doc.setFontSize(9)
+      doc.text('COUTS INTERVENTION',margin+3,y+4.5);y+=9
+      doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(30,30,30)
+      if(pdfCoutMO>0){doc.text('Main d oeuvre : '+dureeH+'h x '+pdfTauxH+'EUR/h = '+pdfCoutMO.toFixed(2)+' EUR',margin+3,y);y+=5}
+      if(pdfCoutTrajet>0){doc.text('Trajet : '+(bon.km_trajet||0).toFixed(1)+'km = '+pdfCoutTrajet.toFixed(2)+' EUR',margin+3,y);y+=5}
+      if(pdfPieces&&pdfPieces.length>0){
+        doc.text('Pieces et consommables :',margin+3,y);y+=5
+        pdfPieces.forEach(p=>{
+          const ligne=p.designation+(p.reference?' ('+p.reference+')':'')+(p.fournisseur?' - '+p.fournisseur:'')+' : '+p.quantite+' x '+p.prix_unitaire.toFixed(2)+' EUR = '+(p.quantite*p.prix_unitaire).toFixed(2)+' EUR'
+          const lignes=doc.splitTextToSize(ligne,W-2*margin-10)
+          lignes.forEach(l=>{if(y>270){doc.addPage();y=margin};doc.text(l,margin+6,y);y+=4})
+        })
+      }
+      doc.setFont('helvetica','bold');doc.setTextColor(...marine)
+      doc.text('TOTAL : '+pdfCoutTotal.toFixed(2)+' EUR',margin+3,y);y+=7
+    }
+    doc.setFontSize(9)
     doc.text("JOURNAL D'ACTIVITE",margin+3,y+4.5);y+=9
     comments.forEach(c=>{
       if(y>270){doc.addPage();y=margin}
@@ -2045,12 +2072,19 @@ async function showPage(name,el){
     const allTab=document.querySelector('.filter-tab[onclick*="all"]')
     if(allTab) allTab.classList.add('active')
     await loadBons()
+    await loadTechs()
+    await loadBats()
     populateFilterBat()
     renderBonsTable()
   }
   if(name==='techniciens') renderTechs()
   if(name==='batiments') renderBatiments()
   if(name==='stats'){renderStats();setTimeout(renderStatsCouts,100)}
+  if(name==='controle'){populateControleSelects();renderControles()}
+  if(name==='historique') renderHistorique()
+  if(name==='carte'){setTimeout(()=>{const m=document.getElementById('map');if(m)m.style.height='480px';initCarte()},200)}
+  if(name==='planning') renderCalendar()
+  if(name==='dashboard') renderDashboard()
 }
 
 function openModal(id){document.getElementById('modal-'+id).style.display='flex'}
@@ -2756,7 +2790,7 @@ async function ajouterPiece(){
     document.getElementById('p-prix').value=''
     await chargerPieces()
     showToast('Pièce ajoutée !')
-    afficherCoutTotal()
+    await afficherCoutTotal()
   } else showToast('Erreur: '+error.message,'error')
 }
 
@@ -2764,7 +2798,7 @@ async function supprimerPiece(id){
   if(!confirm('Supprimer cette pièce ?')) return
   await sb.from('pieces').delete().eq('id',id)
   await chargerPieces()
-  afficherCoutTotal()
+  await afficherCoutTotal()
 }
 
 async function mettreAJourCoutsPieces(totalPieces){
