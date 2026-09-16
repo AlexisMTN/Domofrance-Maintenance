@@ -193,7 +193,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gray);color:va
       
       
       <div class="nav-item" onclick="showPage('planning',this)">📅 Planning</div>
-      <div class="nav-item" onclick="showPage('controle',this)">🛡️ Contrôle Réglementaire</div>
+      <div class="nav-item" onclick="showPage('controle',this).then(()=>{renderControles();loadAndRenderControles()})">🛡️ Contrôle Réglementaire</div>
       <div class="nav-section">Gestion</div>
       <div class="nav-item" onclick="showPage('techniciens',this)">👷 Techniciens</div>
       <div class="nav-item" onclick="showPage('batiments',this)">🏢 Bâtiments</div>
@@ -2062,10 +2062,7 @@ async function showPage(name,el){
   if(name==='historique') renderHistorique()
   if(name==='carte'){setTimeout(()=>{const m=document.getElementById('map');if(m)m.style.height='480px';initCarte()},200)}
   if(name==='planning') renderCalendar()
-  if(name==='controle'){
-    populateControleSelects()
-    setTimeout(()=>{ renderControles(); loadAndRenderControles() }, 300)
-  }
+  if(name==='controle') populateControleSelects()
 }
 
 function openModal(id){document.getElementById('modal-'+id).style.display='flex'}
