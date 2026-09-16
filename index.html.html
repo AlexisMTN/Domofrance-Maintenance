@@ -2064,7 +2064,7 @@ async function showPage(name,el){
   if(name==='planning') renderCalendar()
   if(name==='controle'){
     populateControleSelects()
-    setTimeout(()=>{ renderControles(); loadAndRenderControles() }, 150)
+    setTimeout(()=>{ renderControles(); loadAndRenderControles() }, 300)
   }
 }
 
@@ -2432,6 +2432,10 @@ function getDaysUntil(dateStr){
 function renderControles(){
   const controles = getControles()
   const bat_filter = ''
+  
+  // Si la page n'est pas encore visible, réessayer
+  const list_check = document.getElementById('controle-list')
+  if(!list_check){ setTimeout(renderControles, 100); return }
   
   // Stats
   const stats_el = document.getElementById('controle-stats')
