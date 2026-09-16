@@ -3118,7 +3118,10 @@ function fermerChoixArret(){const el=document.getElementById('modal-choix-arret'
 
 // ── RAFRAICHISSEMENT CENTRAL ──
 async function rafraichirTout(){
-  await rafraichirTout()
+  await loadBons()
+  renderDashboard()
+  renderBonsTable()
+  updateUrgentBadge()
 }
 
 
