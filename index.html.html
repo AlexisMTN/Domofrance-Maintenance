@@ -294,7 +294,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gray);color:va
       </div>
 
       <!-- MES TICKETS -->
-      
+      <div class="page" id="page-mes-tickets">
+        <div id="mes-tickets-content"></div>
+      </div>
+
       <!-- CONTROLE REGLEMENTAIRE -->
       <div class="page" id="page-controle">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px">
@@ -948,20 +951,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gray);color:va
   </div>
 </div>
 
-<!-- MODAL QR CODE -->
-<div class="modal-overlay" id="modal-qr" style="display:none" onclick="if(event.target===this)closeModal('qr')">
-  <div class="modal" style="max-width:360px">
-    <div class="modal-head"><div class="modal-title" id="qr-title">QR Code</div><button class="modal-close" onclick="closeModal('qr')">✕</button></div>
-    <div class="modal-body" style="text-align:center">
-      <div id="qr-container" style="display:flex;justify-content:center;margin:16px 0"></div>
-      <div style="font-size:11px;color:var(--text3)">Scannez pour accéder à la fiche du bâtiment</div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('qr')">Fermer</button>
-      <button class="btn btn-primary" onclick="telechargerQR()">⬇️ Télécharger</button>
-    </div>
-  </div>
-</div>
 <!-- MODAL BATIMENT -->
 <div class="modal-overlay" id="modal-addBat" style="display:none" onclick="if(event.target===this)closeModal('addBat')">
   <div class="modal">
@@ -1347,10 +1336,7 @@ async function openDetail(id){
     return '<div style="display:flex;gap:10px;margin-bottom:12px">'
     +'<div style="width:28px;height:28px;border-radius:50%;background:var(--blue-light);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">'+c.auteur.slice(0,2).toUpperCase()+'</div>'
     +'<div><span style="font-size:13px;font-weight:600">'+c.auteur+'</span> <span style="font-size:11px;color:var(--text3)">'+new Date(c.created_at).toLocaleString('fr-FR')+'</span>'
-    +'<div style="font-size:13px;color:var(--text2);margin-top:2px">'+c.contenu+'<div style="display:flex;gap:8px;padding:8px 14px;border-top:1px solid var(--border)">'
-    +'<button class="btn btn-secondary" style="flex:1;justify-content:center;font-size:12px;padding:6px" onclick="event.stopPropagation();ouvrirQRCode(\''+bid+'\',\''+b.nom+'\')">📱 QR</button>'
-    +'<button class="btn btn-primary" style="flex:1;justify-content:center;font-size:12px;padding:6px" onclick="event.stopPropagation();ouvrirNouveauBonBat(\''+bid+'\')">+ Bon</button>'
-    +'</div></div></div>'
+    +'<div style="font-size:13px;color:var(--text2);margin-top:2px">'+c.contenu+'</div></div></div>'
   }).join('')||'<div style="font-size:13px;color:var(--text3);margin-bottom:12px">Aucun commentaire</div>'
   updateReopenBtn(b.statut)
   // Afficher les coûts
@@ -1560,10 +1546,7 @@ async function confirmerAttente(){
     return '<div style="display:flex;gap:10px;margin-bottom:12px">'
     +'<div style="width:28px;height:28px;border-radius:50%;background:var(--blue-light);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">'+c.auteur.slice(0,2).toUpperCase()+'</div>'
     +'<div><span style="font-size:13px;font-weight:600">'+c.auteur+'</span> <span style="font-size:11px;color:var(--text3)">'+new Date(c.created_at).toLocaleString('fr-FR')+'</span>'
-    +'<div style="font-size:13px;color:var(--text2);margin-top:2px">'+c.contenu+'<div style="display:flex;gap:8px;padding:8px 14px;border-top:1px solid var(--border)">'
-    +'<button class="btn btn-secondary" style="flex:1;justify-content:center;font-size:12px;padding:6px" onclick="event.stopPropagation();ouvrirQRCode(\''+bid+'\',\''+b.nom+'\')">📱 QR</button>'
-    +'<button class="btn btn-primary" style="flex:1;justify-content:center;font-size:12px;padding:6px" onclick="event.stopPropagation();ouvrirNouveauBonBat(\''+bid+'\')">+ Bon</button>'
-    +'</div></div></div>'
+    +'<div style="font-size:13px;color:var(--text2);margin-top:2px">'+c.contenu+'</div></div></div>'
   }).join('')||'<div style="font-size:13px;color:var(--text3);margin-bottom:12px">Aucun commentaire</div>'
 }
 
@@ -1872,9 +1855,6 @@ function renderBatiments(){
     +'<div style="background:var(--gray);border-radius:8px;padding:6px 4px"><div style="font-size:16px;font-weight:700;color:var(--blue)">'+bons.length+'</div><div style="font-size:10px;color:var(--text3)">Bons</div></div>'
     +'<div style="background:'+(enc>0?'var(--orange-light)':'var(--gray)')+';border-radius:8px;padding:6px 4px"><div style="font-size:16px;font-weight:700;color:'+(enc>0?'var(--orange)':'var(--text3)')+'">'+enc+'</div><div style="font-size:10px;color:var(--text3)">En cours</div></div>'
     +'<div style="background:'+(urg>0?'var(--red-light)':'var(--gray)')+';border-radius:8px;padding:6px 4px"><div style="font-size:16px;font-weight:700;color:'+(urg>0?'var(--red)':'var(--text3)')+'">'+urg+'</div><div style="font-size:10px;color:var(--text3)">Urgences</div></div>'
-    +'<div style="display:flex;gap:8px;padding:8px 14px;border-top:1px solid var(--border)">'
-    +'<button class="btn btn-secondary" style="flex:1;justify-content:center;font-size:12px;padding:6px" onclick="event.stopPropagation();ouvrirQRCode(\''+bid+'\',\''+b.nom+'\')">📱 QR</button>'
-    +'<button class="btn btn-primary" style="flex:1;justify-content:center;font-size:12px;padding:6px" onclick="event.stopPropagation();ouvrirNouveauBonBat(\''+bid+'\')">+ Bon</button>'
     +'</div></div></div>'
   }).join('')||'<div style="color:var(--text3);font-size:13px;padding:20px">Aucun bâtiment</div>'
 }
@@ -2499,10 +2479,7 @@ function renderControles(){
       +(c.fichier_url?'<a href="'+c.fichier_url+'" target="_blank" class="btn btn-secondary" style="font-size:11px;padding:5px 10px">📎 Rapport</a>':'')
       +'<button class="btn btn-secondary" style="font-size:11px;padding:5px 10px" onclick="editControle(\''+c.id+'\')" >✏️ Modifier</button>'
       +'<button class="btn btn-danger" style="font-size:11px;padding:5px 10px" onclick="deleteControle(\''+c.id+'\')" >🗑️ Supprimer</button>'
-      +'<div style="display:flex;gap:8px;padding:8px 14px;border-top:1px solid var(--border)">'
-    +'<button class="btn btn-secondary" style="flex:1;justify-content:center;font-size:12px;padding:6px" onclick="event.stopPropagation();ouvrirQRCode(\''+bid+'\',\''+b.nom+'\')">📱 QR</button>'
-    +'<button class="btn btn-primary" style="flex:1;justify-content:center;font-size:12px;padding:6px" onclick="event.stopPropagation();ouvrirNouveauBonBat(\''+bid+'\')">+ Bon</button>'
-    +'</div></div></div>'
+      +'</div></div></div>'
   }).join('')
 }
 
@@ -2548,7 +2525,7 @@ function showPage(name, el){
   if(name==='carte') setTimeout(()=>{const m=document.getElementById('map');if(m)m.style.height='480px';initCarte()},200)
   if(name==='mes-tickets'){el.innerHTML='<div style="padding:20px;text-align:center">Chargement...</div>';renderMesTickets()}
   if(name==='mes-tickets'){el.innerHTML='<div style="padding:20px;text-align:center">Chargement...</div>';renderMesTickets()}
-  if(name==='controle'){populateControleSelects();renderControles();loadAndRenderControles()}
+  if(name==='controle'){populateControleSelects();renderControles()}
 }
 
 // Override openModal pour contrôle
