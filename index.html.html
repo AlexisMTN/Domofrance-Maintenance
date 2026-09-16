@@ -2051,12 +2051,21 @@ async function showPage(name,el){
     const allTab=document.querySelector('.filter-tab[onclick*="all"]')
     if(allTab) allTab.classList.add('active')
     await loadBons()
+    await loadTechs()
+    await loadBats()
     populateFilterBat()
     renderBonsTable()
   }
   if(name==='techniciens') renderTechs()
-  if(name==='batiments') renderBatiments()
+  if(name==='batiments'){await loadBons();renderBatiments()}
   if(name==='stats'){renderStats();setTimeout(renderStatsCouts,100)}
+  if(name==='historique') renderHistorique()
+  if(name==='carte'){setTimeout(()=>{const m=document.getElementById('map');if(m)m.style.height='480px';initCarte()},200)}
+  if(name==='planning') renderCalendar()
+  if(name==='controle'){
+    populateControleSelects()
+    setTimeout(()=>{ renderControles(); loadAndRenderControles() }, 150)
+  }
 }
 
 function openModal(id){document.getElementById('modal-'+id).style.display='flex'}
