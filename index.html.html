@@ -2080,7 +2080,11 @@ async function showPage(name,el){
   if(name==='techniciens') renderTechs()
   if(name==='batiments') renderBatiments()
   if(name==='stats'){renderStats();setTimeout(renderStatsCouts,100)}
-  if(name==='controle'){populateControleSelects();loadAndRenderControles()}
+  if(name==='controle'){
+    populateControleSelects()
+    renderControles() // Afficher immédiatement depuis localStorage
+    loadAndRenderControles() // Puis synchroniser avec Supabase en arrière-plan
+  }
   if(name==='historique') renderHistorique()
   if(name==='carte'){setTimeout(()=>{const m=document.getElementById('map');if(m)m.style.height='480px';initCarte()},200)}
   if(name==='planning') renderCalendar()
@@ -2554,7 +2558,11 @@ function showPage(name, el){
   if(name==='stats'){renderStats();setTimeout(renderStatsCouts,100)}
   if(name==='historique') renderHistorique()
   if(name==='carte') setTimeout(()=>{const m=document.getElementById('map');if(m)m.style.height='480px';initCarte()},200)
-  if(name==='controle'){populateControleSelects();loadAndRenderControles()}
+  if(name==='controle'){
+    populateControleSelects()
+    renderControles() // Afficher immédiatement depuis localStorage
+    loadAndRenderControles() // Puis synchroniser avec Supabase en arrière-plan
+  }
 }
 
 // Override openModal pour contrôle
