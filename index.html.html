@@ -647,63 +647,15 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gray);color:va
         </div>
         <div class="form-row">
           <div class="form-group"><label class="form-label">Fournisseur</label><input class="form-input" id="p-fournisseur" placeholder="Ex: Leroy Merlin, Rexel..."></div>
-          <div class="form-group"><label class="form-label">Quantité</label><input type="number" class="form-input" id="p-quantite" value="1" min="0.1" step="0.1"></div>
+          <div class="form-group"><label class="form-label">Quantité</label><input type="number" class="form-input" id="p-quantite" value="1" min="0.1" step="0.1" oninput="updatePrixPreview()"></div>
         </div>
         <div class="form-row">
-          <div class="form-group"><label class="form-label">Prix unitaire (€)</label><input type="number" class="form-input" id="p-prix" placeholder="0.00" step="0.01" min="0"></div>
+          <div class="form-group"><label class="form-label">Prix unitaire HT (€)</label><input type="number" class="form-input" id="p-prix" placeholder="0.00" step="0.01" min="0" oninput="updatePrixPreview()"></div>
           <div class="form-group" style="display:flex;align-items:flex-end">
             <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="ajouterPiece()">+ Ajouter</button>
           </div>
         </div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('pieces')">Fermer</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL ACCEPTER MISSION -->
-<div class="modal-overlay" id="modal-mission" style="display:none" onclick="if(event.target===this)closeModal('mission')">
-  <div class="modal" style="max-width:440px">
-    <div class="modal-head"><div class="modal-title">🚗 Accepter la mission</div><button class="modal-close" onclick="closeModal('mission')">✕</button></div>
-    <div class="modal-body">
-      <div style="background:var(--blue-light);border-radius:10px;padding:14px;margin-bottom:16px;font-size:13px;color:var(--blue)">En acceptant cette mission, votre position GPS actuelle sera enregistree comme point de depart pour calculer la distance et le cout de trajet.</div>
-      <div id="mission-bon-info" style="background:var(--gray);border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px"></div>
-      <div class="form-group">
-        <label class="form-label">Prix carburant actuel (€/L)</label>
-        <input type="number" class="form-input" id="mission-prix-carb" value="1.75" step="0.001" min="0">
-        <div style="font-size:11px;color:var(--text3);margin-top:3px">Verifiez le prix actuel a la pompe</div>
-      </div>
-      <div id="mission-gps-status" style="text-align:center;font-size:13px;color:var(--text3);padding:10px">📍 Cliquez Accepter pour activer la geolocalisation</div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('mission')">Annuler</button>
-      <button class="btn btn-primary" onclick="accepterMission()">🚗 Accepter et partir</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL PIECES -->
-<div class="modal-overlay" id="modal-pieces" style="display:none" onclick="if(event.target===this)closeModal('pieces')">
-  <div class="modal" style="max-width:580px">
-    <div class="modal-head"><div class="modal-title">🔩 Pieces et consommables</div><button class="modal-close" onclick="closeModal('pieces')">✕</button></div>
-    <div class="modal-body">
-      <div id="pieces-list" style="margin-bottom:16px"></div>
-      <div style="background:var(--gray);border-radius:10px;padding:14px">
-        <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:10px">Ajouter une piece / consommable</div>
-        <div class="form-row">
-          <div class="form-group"><label class="form-label">Designation *</label><input class="form-input" id="p-designation" placeholder="Ex: Joint torique, Cable..."></div>
-          <div class="form-group"><label class="form-label">Reference</label><input class="form-input" id="p-reference" placeholder="Ex: REF-001"></div>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label class="form-label">Fournisseur</label><input class="form-input" id="p-fournisseur" placeholder="Ex: Leroy Merlin, Rexel..."></div>
-          <div class="form-group"><label class="form-label">Quantite</label><input type="number" class="form-input" id="p-quantite" value="1" min="0.1" step="0.1"></div>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label class="form-label">Prix unitaire (€)</label><input type="number" class="form-input" id="p-prix" placeholder="0.00" step="0.01" min="0"></div>
-          <div class="form-group" style="display:flex;align-items:flex-end"><button class="btn btn-primary" style="width:100%;justify-content:center" onclick="ajouterPiece()">+ Ajouter</button></div>
-        </div>
+        <div style="background:var(--white);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--navy);font-weight:600;margin-top:4px" id="p-total-preview">Total : 0,00 €</div>
       </div>
     </div>
     <div class="modal-footer">
@@ -860,96 +812,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gray);color:va
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('addControle')">Annuler</button>
       <button class="btn btn-primary" id="btn-save-controle" onclick="saveControle()">✓ Enregistrer</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL PIECES/CONSOMMABLES -->
-<div class="modal-overlay" id="modal-pieces" style="display:none" onclick="if(event.target===this)closeModal('pieces')">
-  <div class="modal" style="max-width:520px">
-    <div class="modal-head"><div class="modal-title">🔩 Pièces et consommables</div><button class="modal-close" onclick="closeModal('pieces')">✕</button></div>
-    <div class="modal-body">
-      <div id="pieces-list" style="margin-bottom:16px"></div>
-      <div style="border-top:1px solid var(--border);padding-top:14px">
-        <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:10px">Ajouter une pièce / consommable</div>
-        <div class="form-group"><label class="form-label">Désignation *</label><input class="form-input" id="p-designation" placeholder="Ex: Joint d'étanchéité, Disjoncteur 16A..."></div>
-        <div class="form-row">
-          <div class="form-group"><label class="form-label">Référence</label><input class="form-input" id="p-reference" placeholder="REF-001"></div>
-          <div class="form-group"><label class="form-label">Fournisseur</label><input class="form-input" id="p-fournisseur" placeholder="Rexel, Point P..."></div>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label class="form-label">Quantité</label><input type="number" min="1" step="1" class="form-input" id="p-quantite" value="1"></div>
-          <div class="form-group"><label class="form-label">Prix unitaire HT (€)</label><input type="number" step="0.01" class="form-input" id="p-prix" placeholder="0.00"></div>
-        </div>
-        <div style="background:var(--gray);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--navy);font-weight:600" id="p-total-preview">Total : 0,00 €</div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('pieces')">Fermer</button>
-      <button class="btn btn-primary" onclick="ajouterPiece()">+ Ajouter</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL ACCEPTER MISSION -->
-<div class="modal-overlay" id="modal-mission" style="display:none" onclick="if(event.target===this)closeModal('mission')">
-  <div class="modal" style="max-width:420px">
-    <div class="modal-head"><div class="modal-title">🚗 Accepter la mission</div><button class="modal-close" onclick="closeModal('mission')">✕</button></div>
-    <div class="modal-body">
-      <div style="background:var(--blue-light);border-radius:10px;padding:14px 16px;margin-bottom:16px;font-size:13px;color:var(--blue)">
-        📍 En acceptant cette mission, votre position GPS actuelle sera enregistrée comme point de départ pour calculer le coût de trajet.
-      </div>
-      <div id="mission-info" style="font-size:13px;color:var(--text2);margin-bottom:14px"></div>
-      <div id="mission-geo-status" style="font-size:12px;color:var(--text3);text-align:center;padding:10px">En attente de géolocalisation...</div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('mission')">Annuler</button>
-      <button class="btn btn-primary" id="btn-accepter-mission" onclick="confirmerAccepterMission()" disabled>🚗 Partir en intervention</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL PIECES/CONSOMMABLES -->
-<div class="modal-overlay" id="modal-pieces" style="display:none" onclick="if(event.target===this)closeModal('pieces')">
-  <div class="modal" style="max-width:520px">
-    <div class="modal-head"><div class="modal-title">🔩 Pièces et consommables</div><button class="modal-close" onclick="closeModal('pieces')">✕</button></div>
-    <div class="modal-body">
-      <div id="pieces-list" style="margin-bottom:16px"></div>
-      <div style="border-top:1px solid var(--border);padding-top:14px">
-        <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:10px">Ajouter une pièce / consommable</div>
-        <div class="form-group"><label class="form-label">Désignation *</label><input class="form-input" id="p-designation" placeholder="Ex: Joint d'étanchéité, Disjoncteur 16A..."></div>
-        <div class="form-row">
-          <div class="form-group"><label class="form-label">Référence</label><input class="form-input" id="p-reference" placeholder="REF-001"></div>
-          <div class="form-group"><label class="form-label">Fournisseur</label><input class="form-input" id="p-fournisseur" placeholder="Rexel, Point P..."></div>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label class="form-label">Quantité</label><input type="number" min="1" step="1" class="form-input" id="p-quantite" value="1" oninput="updatePrixPreview()"></div>
-          <div class="form-group"><label class="form-label">Prix unitaire HT (€)</label><input type="number" step="0.01" class="form-input" id="p-prix" placeholder="0.00" oninput="updatePrixPreview()"></div>
-        </div>
-        <div style="background:var(--gray);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--navy);font-weight:600" id="p-total-preview">Total : 0,00 €</div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('pieces')">Fermer</button>
-      <button class="btn btn-primary" onclick="ajouterPiece()">+ Ajouter</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL ACCEPTER MISSION -->
-<div class="modal-overlay" id="modal-mission" style="display:none" onclick="if(event.target===this)closeModal('mission')">
-  <div class="modal" style="max-width:420px">
-    <div class="modal-head"><div class="modal-title">🚗 Accepter la mission</div><button class="modal-close" onclick="closeModal('mission')">✕</button></div>
-    <div class="modal-body">
-      <div style="background:var(--blue-light);border-radius:10px;padding:14px 16px;margin-bottom:16px;font-size:13px;color:var(--blue)">
-        📍 Votre position GPS actuelle sera enregistrée comme point de départ pour calculer automatiquement le coût de trajet.
-      </div>
-      <div id="mission-info" style="font-size:13px;color:var(--text2);margin-bottom:14px"></div>
-      <div id="mission-geo-status" style="font-size:12px;color:var(--text3);text-align:center;padding:10px">En attente de géolocalisation...</div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('mission')">Annuler</button>
-      <button class="btn btn-primary" id="btn-accepter-mission" onclick="confirmerAccepterMission()" disabled>🚗 Partir en intervention</button>
     </div>
   </div>
 </div>
@@ -1344,9 +1206,6 @@ async function openDetail(id){
     +'<div style="font-size:13px;color:var(--text2);margin-top:2px">'+c.contenu+'</div></div></div>'
   }).join('')||'<div style="font-size:13px;color:var(--text3);margin-bottom:12px">Aucun commentaire</div>'
   updateReopenBtn(b.statut)
-  // Afficher les coûts
-  const coutsContainer=document.getElementById('d-couts-container')
-  if(coutsContainer) coutsContainer.innerHTML=renderCoutsBon(b)
   openModal('detail')
   setTimeout(prefillAllAuteurs,100)
   setTimeout(afficherCoutTotal,200)
@@ -2731,34 +2590,45 @@ function haversineKm(lat1,lon1,lat2,lon2){
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))
 }
 
-// ── PIÈCES ──
+// ── PIÈCES (source unique : table Supabase "pieces", synchronisée sur tous les appareils) ──
 async function ouvrirPieces(){
   await chargerPieces()
   openModal('pieces')
+  const preview=document.getElementById('p-total-preview')
+  if(preview) preview.textContent='Total : 0,00 €'
 }
 
 async function chargerPieces(){
   const {data}=await sb.from('pieces').select('*').eq('bon_id',currentBonId).order('created_at')
   const list=document.getElementById('pieces-list')
-  if(!list) return
-  if(!data||data.length===0){
-    list.innerHTML='<div style="color:var(--text3);font-size:13px;text-align:center;padding:16px">Aucune pièce ajoutée</div>'
-    return
+  const total=(data||[]).reduce((s,p)=>s+(p.quantite*p.prix_unitaire),0)
+  if(list){
+    if(!data||data.length===0){
+      list.innerHTML='<div style="color:var(--text3);font-size:13px;text-align:center;padding:16px">Aucune pièce ajoutée</div>'
+    } else {
+      list.innerHTML='<table class="table"><thead><tr><th>Désignation</th><th>Réf.</th><th>Fournisseur</th><th>Qté</th><th>Prix unit.</th><th>Total</th><th></th></tr></thead><tbody>'
+        +data.map(p=>'<tr>'
+          +'<td style="font-weight:600">'+p.designation+'</td>'
+          +'<td style="font-size:11px;color:var(--text3)">'+(p.reference||'—')+'</td>'
+          +'<td style="font-size:12px">'+(p.fournisseur||'—')+'</td>'
+          +'<td>'+p.quantite+'</td>'
+          +'<td>'+parseFloat(p.prix_unitaire).toFixed(2)+'€</td>'
+          +'<td style="font-weight:600;color:var(--navy)">'+(p.quantite*p.prix_unitaire).toFixed(2)+'€</td>'
+          +'<td><button onclick="supprimerPiece(\''+p.id+'\' )" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:14px">✕</button></td>'
+          +'</tr>').join('')
+        +'<tr style="background:var(--gray)"><td colspan="5" style="font-weight:700;text-align:right">TOTAL PIÈCES</td><td style="font-weight:700;color:var(--navy)">'+ total.toFixed(2)+'€</td><td></td></tr>'
+        +'</tbody></table>'
+    }
   }
-  const total=data.reduce((s,p)=>s+(p.quantite*p.prix_unitaire),0)
-  list.innerHTML='<table class="table"><thead><tr><th>Désignation</th><th>Réf.</th><th>Fournisseur</th><th>Qté</th><th>Prix unit.</th><th>Total</th><th></th></tr></thead><tbody>'
-    +data.map(p=>'<tr>'
-      +'<td style="font-weight:600">'+p.designation+'</td>'
-      +'<td style="font-size:11px;color:var(--text3)">'+(p.reference||'—')+'</td>'
-      +'<td style="font-size:12px">'+(p.fournisseur||'—')+'</td>'
-      +'<td>'+p.quantite+'</td>'
-      +'<td>'+parseFloat(p.prix_unitaire).toFixed(2)+'€</td>'
-      +'<td style="font-weight:600;color:var(--navy)">'+(p.quantite*p.prix_unitaire).toFixed(2)+'€</td>'
-      +'<td><button onclick="supprimerPiece(\''+p.id+'\' )" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:14px">✕</button></td>'
-      +'</tr>').join('')
-    +'<tr style="background:var(--gray)"><td colspan="5" style="font-weight:700;text-align:right">TOTAL PIÈCES</td><td style="font-weight:700;color:var(--navy)">'+ total.toFixed(2)+'€</td><td></td></tr>'
-    +'</tbody></table>'
-  await mettreAJourCoutsPieces(total)
+  return total
+}
+
+function updatePrixPreview(){
+  const qty = parseFloat(document.getElementById('p-quantite')?.value)||1
+  const prix = parseFloat(document.getElementById('p-prix')?.value)||0
+  const total = qty * prix
+  const el = document.getElementById('p-total-preview')
+  if(el) el.textContent = 'Total : '+total.toFixed(2)+' €'
 }
 
 async function ajouterPiece(){
@@ -2779,9 +2649,10 @@ async function ajouterPiece(){
     document.getElementById('p-fournisseur').value=''
     document.getElementById('p-quantite').value='1'
     document.getElementById('p-prix').value=''
+    updatePrixPreview()
     await chargerPieces()
     showToast('Pièce ajoutée !')
-    afficherCoutTotal()
+    await afficherCoutTotal()
   } else showToast('Erreur: '+error.message,'error')
 }
 
@@ -2789,282 +2660,58 @@ async function supprimerPiece(id){
   if(!confirm('Supprimer cette pièce ?')) return
   await sb.from('pieces').delete().eq('id',id)
   await chargerPieces()
-  afficherCoutTotal()
+  await afficherCoutTotal()
 }
 
-async function mettreAJourCoutsPieces(totalPieces){
-  const bon=allBons.find(b=>b.id===currentBonId)
-  if(!bon) return
+// ── CALCUL + SAUVEGARDE UNIFIÉS DU COÛT D'UNE INTERVENTION ──
+// Seule fonction qui calcule les coûts : utilisée partout (détail du bon, statistiques,
+// historique) pour être certain que le total affiché est toujours le même, sur tous les appareils.
+async function recalculerCoutsBon(bonId){
+  const bon=allBons.find(b=>b.id===bonId)
+  if(!bon) return null
   const tech=allTechs.find(t=>t.id===bon.technicien_id)
   const tauxHoraire=tech?.taux_horaire||0
-  const dureeH=bon.duree_reelle||0
+  // Durée : la durée finale une fois le bon terminé, sinon le chrono en cours si c'est le bon actuellement ouvert
+  let dureeH=bon.duree_reelle||0
+  if(!dureeH && bonId===currentBonId && chronoSeconds>0) dureeH=chronoSeconds/3600
   const coutMO=parseFloat((dureeH*tauxHoraire).toFixed(2))
-  const coutTrajet=bon.cout_trajet||0
-  const coutTotal=parseFloat((coutMO+coutTrajet+totalPieces).toFixed(2))
-  await sb.from('bons_travail').update({
-    cout_mo:coutMO,
-    cout_pieces:parseFloat(totalPieces.toFixed(2)),
-    cout_total:coutTotal
-  }).eq('id',currentBonId)
-  loadBons() // en arrière-plan
+  const coutTrajet=parseFloat((bon.cout_trajet||0).toFixed(2))
+  const {data:pieces}=await sb.from('pieces').select('quantite,prix_unitaire').eq('bon_id',bonId)
+  const coutPieces=parseFloat(((pieces||[]).reduce((s,p)=>s+(p.quantite*p.prix_unitaire),0)).toFixed(2))
+  const coutTotal=parseFloat((coutMO+coutTrajet+coutPieces).toFixed(2))
+  await sb.from('bons_travail').update({cout_mo:coutMO,cout_pieces:coutPieces,cout_total:coutTotal}).eq('id',bonId)
+  const idx=allBons.findIndex(b=>b.id===bonId)
+  if(idx!==-1) allBons[idx]={...allBons[idx],cout_mo:coutMO,cout_pieces:coutPieces,cout_total:coutTotal}
+  return {coutMO,coutTrajet,coutPieces,coutTotal,dureeH,tauxHoraire,nbPieces:(pieces||[]).length}
 }
 
 async function afficherCoutTotal(){
-  const bon=allBons.find(b=>b.id===currentBonId)
-  if(!bon) return
-  const {data:pieces}=await sb.from('pieces').select('quantite,prix_unitaire').eq('bon_id',currentBonId)
-  const totalPieces=(pieces||[]).reduce((s,p)=>s+(p.quantite*p.prix_unitaire),0)
-  const tech=allTechs.find(t=>t.id===bon.technicien_id)
-  const tauxHoraire=tech?.taux_horaire||0
-  const dureeH=bon.duree_reelle||(chronoSeconds/3600)||0
-  const coutMO=dureeH*tauxHoraire
-  const coutTrajet=bon.cout_trajet||0
-  const coutTotal=coutMO+coutTrajet+totalPieces
+  if(!currentBonId) return
+  const couts=await recalculerCoutsBon(currentBonId)
   const el=document.getElementById('d-cout-total')
-  if(!el) return
-  if(coutTotal<=0&&!tauxHoraire){
+  if(!el||!couts) return
+  const bon=allBons.find(b=>b.id===currentBonId)
+  if(couts.coutTotal<=0&&!couts.tauxHoraire){
     el.innerHTML='<div style="font-size:11px;color:var(--text3);text-align:center;margin-top:4px">💡 Configurez le taux horaire dans la fiche technicien</div>'
     return
   }
   el.innerHTML='<div style="background:var(--gray);border-radius:10px;padding:12px;margin-top:4px">'
-    +'<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;margin-bottom:8px">💰 Coûts de l intervention</div>'
-    +(coutMO>0?'<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>Main d oeuvre ('+dureeH.toFixed(2)+'h × '+tauxHoraire+'€)</span><span style="font-weight:600">'+coutMO.toFixed(2)+'€</span></div>':'')
-    +(coutTrajet>0?'<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>Trajet ('+(bon.km_trajet||0).toFixed(1)+'km aller-retour)</span><span style="font-weight:600">'+coutTrajet.toFixed(2)+'€</span></div>':'')
-    +(totalPieces>0?'<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>Pièces / Consommables</span><span style="font-weight:600">'+totalPieces.toFixed(2)+'€</span></div>':'')
-    +'<div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;color:var(--navy);padding-top:6px;border-top:1px solid var(--border);margin-top:4px"><span>TOTAL</span><span>'+coutTotal.toFixed(2)+' €</span></div>'
+    +'<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;margin-bottom:8px">💰 Coûts de l\'intervention</div>'
+    +(couts.coutMO>0?'<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>Main d\'œuvre ('+couts.dureeH.toFixed(2)+'h × '+couts.tauxHoraire+'€)</span><span style="font-weight:600">'+couts.coutMO.toFixed(2)+'€</span></div>':'')
+    +(couts.coutTrajet>0?'<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>Trajet ('+(bon?.km_trajet||0).toFixed(1)+'km aller-retour)</span><span style="font-weight:600">'+couts.coutTrajet.toFixed(2)+'€</span></div>':'')
+    +(couts.coutPieces>0?'<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>Pièces / Consommables ('+couts.nbPieces+')</span><span style="font-weight:600">'+couts.coutPieces.toFixed(2)+'€</span></div>':'')
+    +'<div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;color:var(--navy);padding-top:6px;border-top:1px solid var(--border);margin-top:4px"><span>TOTAL</span><span>'+couts.coutTotal.toFixed(2)+' €</span></div>'
     +'</div>'
 }
 
-
-// ── SYSTÈME DE COÛTS ──
-
-// Prix carburant temps réel (approximation ou valeur saisie)
-let prixCarburant = { diesel: 1.75, essence: 1.80, electrique: 0.20 }
-
-async function fetchPrixCarburant(){
-  // Valeur approximative - le prix réel nécessite une API gouvernementale
-  // On stocke la dernière valeur connue
-  const stored = localStorage.getItem('prix_carburant')
-  if(stored){
-    try{ const p=JSON.parse(stored); if(Date.now()-p.ts < 24*60*60*1000){ prixCarburant=p.prix; return } }catch(e){}
-  }
-  // Prix par défaut mis à jour manuellement
-  localStorage.setItem('prix_carburant', JSON.stringify({prix:prixCarburant, ts:Date.now()}))
-}
-
-function getPrixKm(tech){
-  if(!tech) return 0
-  const conso = tech.conso_100km || 10
-  const moto = tech.motorisation || 'diesel'
-  const prix = prixCarburant[moto] || 1.75
-  return (conso / 100) * prix // coût carburant par km
-}
-
-function getCoutVehiculeJour(tech){
-  if(!tech) return 0
-  const assurance = tech.assurance_mensuelle || 0
-  const maintenance = tech.maintenance_mensuelle || 0
-  const joursOuvres = 20 // approximation mensuelle
-  return (assurance + maintenance) / joursOuvres
-}
-
-// ── HAVERSINE (distance GPS) ──
-function haversineKm(lat1,lon1,lat2,lon2){
-  const R=6371
-  const dLat=(lat2-lat1)*Math.PI/180
-  const dLon=(lon2-lon1)*Math.PI/180
-  const a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2)
-  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))
-}
-
-// ── GÉOLOCALISATION DÉPART MISSION ──
-let missionGeoCoords = null
-
-function ouvrirMission(){
-  const bon = allBons.find(b=>b.id===currentBonId)
-  if(!bon) return
-  const bat = allBats.find(b=>b.id===bon.batiment_id)
-  missionGeoCoords = null
-  const btnAccepter = document.getElementById('btn-accepter-mission')
-  if(btnAccepter) btnAccepter.disabled = true
-  const infoEl = document.getElementById('mission-info')
-  if(infoEl) infoEl.innerHTML = '<b>Bon :</b> '+bon.titre+'<br><b>Bâtiment :</b> '+(bat?bat.nom+' — '+bat.adresse+', '+(bat.code_postal||'')+' '+bat.ville:'—')
-  const statusEl = document.getElementById('mission-geo-status')
-  if(statusEl) statusEl.textContent = '📡 Récupération de votre position GPS...'
-
-  if(!navigator.geolocation){
-    if(statusEl) statusEl.textContent = '❌ Géolocalisation non disponible sur cet appareil'
-    return
-  }
-  navigator.geolocation.getCurrentPosition(
-    (pos)=>{
-      missionGeoCoords = {lat:pos.coords.latitude, lng:pos.coords.longitude}
-      if(statusEl) statusEl.innerHTML = '✅ Position obtenue<br><span style="font-size:11px;color:var(--text3)">Lat: '+missionGeoCoords.lat.toFixed(4)+' / Lng: '+missionGeoCoords.lng.toFixed(4)+'</span>'
-      if(btnAccepter) btnAccepter.disabled = false
-    },
-    (err)=>{
-      if(statusEl) statusEl.textContent = 'Impossible d\'obtenir la position GPS. Vérifiez les autorisations.'
-      if(btnAccepter) btnAccepter.disabled = false // On permet quand même de démarrer
-    },
-    {enableHighAccuracy:true, timeout:10000}
-  )
-  openModal('mission')
-}
-
-async function confirmerAccepterMission(){
-  const bon = allBons.find(b=>b.id===currentBonId)
-  if(!bon) return
-
-  // Calculer distance si on a la géoloc de départ et du bâtiment
-  let kmTrajet = 0
-  const bat = allBats.find(b=>b.id===bon.batiment_id)
-  if(missionGeoCoords && bat && bat._lat && bat._lng){
-    const distLin = haversineKm(missionGeoCoords.lat, missionGeoCoords.lng, bat._lat, bat._lng)
-    kmTrajet = Math.round(distLin * 1.3 * 10) / 10 // +30% pour les routes
-  }
-
-  // Récupérer le technicien pour les coûts
-  const tech = allTechs.find(t=>t.id===bon.technicien_id)
-  const coutKm = getPrixKm(tech)
-  const coutVehicule = getCoutVehiculeJour(tech)
-  const coutTrajet = kmTrajet > 0 ? (kmTrajet * coutKm) + coutVehicule : coutVehicule
-
-  // Sauvegarder les données de trajet + changer statut en cours
-  await sb.from('bons_travail').update({
-    statut:'en_cours',
-    date_debut: new Date().toISOString(),
-    km_trajet: kmTrajet > 0 ? kmTrajet : null,
-    cout_trajet: parseFloat(coutTrajet.toFixed(2)),
-    depart_lat: missionGeoCoords?.lat || null,
-    depart_lng: missionGeoCoords?.lng || null,
-  }).eq('id',currentBonId)
-
-  closeModal('mission')
-  showToast('🚗 Mission acceptée ! '+( kmTrajet>0 ? kmTrajet+'km — Coût trajet estimé: '+coutTrajet.toFixed(2)+'€' : 'Trajet non calculé'))
-  chronoStart()
-  loadBons() // en arrière-plan
-  await openDetail(currentBonId)
-}
-
-// ── PIÈCES ET CONSOMMABLES ──
-let piecesEnCours = {} // { bonId: [{...}] }
-
-function getPieces(bonId){
-  try{ return JSON.parse(localStorage.getItem('pieces_'+bonId)||'[]') }catch(e){ return [] }
-}
-function savePieces(bonId, list){
-  localStorage.setItem('pieces_'+bonId, JSON.stringify(list))
-}
-
-function updatePrixPreview(){
-  const qty = parseFloat(document.getElementById('p-quantite')?.value)||1
-  const prix = parseFloat(document.getElementById('p-prix')?.value)||0
-  const total = qty * prix
-  const el = document.getElementById('p-total-preview')
-  if(el) el.textContent = 'Total : '+total.toFixed(2)+' €'
-}
-
-function ouvrirPieces(){
-  renderPiecesList()
-  openModal('pieces')
-}
-
-function renderPiecesList(){
-  const pieces = getPieces(currentBonId)
-  const listEl = document.getElementById('pieces-list')
-  if(!listEl) return
-  if(pieces.length===0){
-    listEl.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:8px">Aucune pièce ajoutée</div>'
-    return
-  }
-  const total = pieces.reduce((s,p)=>s+(p.quantite*p.prix),0)
-  listEl.innerHTML = '<div style="margin-bottom:8px">'
-    +pieces.map((p,i)=>'<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--gray);border-radius:8px;margin-bottom:6px;font-size:12px">'
-      +'<div style="flex:1"><b>'+p.designation+'</b>'+(p.reference?' <span style="color:var(--text3)">Réf: '+p.reference+'</span>':'')+(p.fournisseur?' — '+p.fournisseur:'')+'<br>'
-      +'Qté: '+p.quantite+' × '+p.prix.toFixed(2)+'€ = <b>'+(p.quantite*p.prix).toFixed(2)+'€</b></div>'
-      +'<button onclick="supprimerPiece('+i+')" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:16px">✕</button>'
-      +'</div>').join('')
-    +'<div style="text-align:right;font-weight:700;color:var(--navy);font-size:13px;padding:6px 0">Total pièces : '+total.toFixed(2)+' €</div>'
-    +'</div>'
-}
-
-function ajouterPiece(){
-  const designation = document.getElementById('p-designation').value.trim()
-  if(!designation){ showToast('Désignation obligatoire','error'); return }
-  const piece = {
-    designation,
-    reference: document.getElementById('p-reference').value||null,
-    fournisseur: document.getElementById('p-fournisseur').value||null,
-    quantite: parseFloat(document.getElementById('p-quantite').value)||1,
-    prix: parseFloat(document.getElementById('p-prix').value)||0,
-  }
-  const pieces = getPieces(currentBonId)
-  pieces.push(piece)
-  savePieces(currentBonId, pieces)
-  // Reset form
-  document.getElementById('p-designation').value=''
-  document.getElementById('p-reference').value=''
-  document.getElementById('p-fournisseur').value=''
-  document.getElementById('p-quantite').value='1'
-  document.getElementById('p-prix').value=''
-  document.getElementById('p-total-preview').textContent='Total : 0,00 €'
-  renderPiecesList()
-  showToast('Pièce ajoutée ✓')
-}
-
-function supprimerPiece(idx){
-  const pieces = getPieces(currentBonId)
-  pieces.splice(idx,1)
-  savePieces(currentBonId, pieces)
-  renderPiecesList()
-}
-
-// ── CALCUL COÛT TOTAL D'UNE INTERVENTION ──
-function calculerCoutIntervention(bon, tech){
-  const dureeH = bon.duree_reelle || 0
-  const tauxH = tech?.taux_horaire || 0
-  const coutMO = dureeH * tauxH
-
-  const coutTrajet = bon.cout_trajet || 0
-
-  const pieces = getPieces(bon.id)
-  const coutPieces = pieces.reduce((s,p)=>s+(p.quantite*p.prix),0)
-
-  const total = coutMO + coutTrajet + coutPieces
-
-  return { coutMO, coutTrajet, coutPieces, total, dureeH, tauxH }
-}
-
-// ── AFFICHER COÛTS dans le détail du bon ──
-function renderCoutsBon(bon){
-  const tech = allTechs.find(t=>t.id===bon.technicien_id)
-  const couts = calculerCoutIntervention(bon, tech)
-  const pieces = getPieces(bon.id)
-
-  return '<div class="card" style="padding:14px 16px;margin-top:14px">'
-    +'<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;margin-bottom:10px">💰 Coûts de l\'intervention</div>'
-    +'<div style="display:flex;flex-direction:column;gap:6px">'
-    +'<div style="display:flex;justify-content:space-between;font-size:12px"><span>Main d\'œuvre ('+couts.dureeH+'h × '+couts.tauxH+'€/h)</span><span style="font-weight:600">'+couts.coutMO.toFixed(2)+' €</span></div>'
-    +'<div style="display:flex;justify-content:space-between;font-size:12px"><span>Trajet'+(bon.km_trajet?' ('+bon.km_trajet+' km)':'')+'</span><span style="font-weight:600">'+couts.coutTrajet.toFixed(2)+' €</span></div>'
-    +'<div style="display:flex;justify-content:space-between;font-size:12px"><span>Pièces/Consommables ('+pieces.length+' article(s))</span><span style="font-weight:600">'+couts.coutPieces.toFixed(2)+' €</span></div>'
-    +'<div style="border-top:1px solid var(--border);margin-top:4px;padding-top:8px;display:flex;justify-content:space-between;font-size:14px;font-weight:700;color:var(--navy)"><span>TOTAL INTERVENTION</span><span>'+couts.total.toFixed(2)+' €</span></div>'
-    +'</div>'
-    +'<div style="display:flex;gap:8px;margin-top:12px">'
-    +'<button class="btn btn-secondary" style="font-size:12px;padding:6px 12px" onclick="ouvrirPieces()">🔩 Pièces ('+pieces.length+')</button>'
-    +(bon.statut!=='termine'?'<button class="btn btn-primary" style="font-size:12px;padding:6px 12px" onclick="ouvrirMission()">🚗 Accepter la mission</button>':'')
-    +'</div>'
-    +'</div>'
-}
-
-// ── STATISTIQUES COÛTS ──
+// ── STATISTIQUES COÛTS ── (lit directement les totaux sauvegardés sur chaque bon,
+// pour rester rapide et toujours cohérent avec ce qui est affiché dans le détail du bon)
 function renderStatsCouts(){
-  const totalMO = allBons.filter(b=>b.statut==='termine').reduce((s,b)=>{
-    const tech=allTechs.find(t=>t.id===b.technicien_id)
-    return s+(b.duree_reelle||0)*(tech?.taux_horaire||0)
-  },0)
-  const totalTrajet = allBons.filter(b=>b.statut==='termine').reduce((s,b)=>s+(b.cout_trajet||0),0)
-  const totalPieces = allBons.filter(b=>b.statut==='termine').reduce((s,b)=>s+getPieces(b.id).reduce((sp,p)=>sp+(p.quantite*p.prix),0),0)
-  const totalGlobal = totalMO+totalTrajet+totalPieces
+  const bonsTermines=allBons.filter(b=>b.statut==='termine')
+  const totalMO=bonsTermines.reduce((s,b)=>s+(b.cout_mo||0),0)
+  const totalTrajet=bonsTermines.reduce((s,b)=>s+(b.cout_trajet||0),0)
+  const totalPieces=bonsTermines.reduce((s,b)=>s+(b.cout_pieces||0),0)
+  const totalGlobal=totalMO+totalTrajet+totalPieces
 
   const el = document.getElementById('stats-couts')
   if(!el) return
@@ -3081,10 +2728,10 @@ function renderStatsCouts(){
     // Par technicien
     +'<div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:10px">Coût par technicien</div>'
     +allTechs.map(t=>{
-      const bons=allBons.filter(b=>b.technicien_id===t.id&&b.statut==='termine')
-      const mo=bons.reduce((s,b)=>s+(b.duree_reelle||0)*(t.taux_horaire||0),0)
+      const bons=bonsTermines.filter(b=>b.technicien_id===t.id)
+      const mo=bons.reduce((s,b)=>s+(b.cout_mo||0),0)
       const trajet=bons.reduce((s,b)=>s+(b.cout_trajet||0),0)
-      const pieces=bons.reduce((s,b)=>s+getPieces(b.id).reduce((sp,p)=>sp+(p.quantite*p.prix),0),0)
+      const pieces=bons.reduce((s,b)=>s+(b.cout_pieces||0),0)
       const total=mo+trajet+pieces
       if(total===0) return ''
       return '<div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--gray);border-radius:8px;margin-bottom:8px">'
@@ -3542,6 +3189,8 @@ async function doConfirmerTerminer(){
   const extra={statut:'termine',date_fin:new Date().toISOString(),suppression_prevue:new Date(Date.now()+15*24*60*60*1000).toISOString()}
   if(chronoSeconds>0) extra.duree_reelle=dureeH
   await sb.from('bons_travail').update(extra).eq('id',currentBonId)
+  await loadBons()
+  await recalculerCoutsBon(currentBonId)
 
   const contenu=comment?'✅ Intervention terminée — '+comment:'✅ Intervention terminée par '+auteur
   await sb.from('commentaires').insert([{bon_id:currentBonId,auteur,contenu}])
