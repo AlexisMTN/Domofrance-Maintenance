@@ -1004,6 +1004,7 @@ async function onLogin(user){
     document.getElementById('ms-username').textContent = name
     document.getElementById('mode-simplifie').style.display = 'block'
     document.querySelector('.app').style.display = 'none'
+    await Promise.all([loadBats(), loadTechs()])
     await renderMesDemandes()
     return
   }
