@@ -2640,8 +2640,8 @@ async function accepterMission(){
       await loadBons(); renderDashboard(); renderBonsTable()
       closeModal('mission')
       showToast('🚗 Mission acceptée ! Distance: '+distKm.toFixed(1)+'km · Coût trajet: '+coutTrajet+'€')
+      await afficherCoutTotal()
       chronoStart()
-      afficherCoutTotal()
     } else {
       // L'adresse du bâtiment n'a pas pu être géolocalisée (adresse manquante/incomplète)
       statusEl.textContent='✅ Position enregistrée ! (adresse du bâtiment introuvable pour calculer la distance)'
@@ -2653,6 +2653,7 @@ async function accepterMission(){
       await loadBons()
       closeModal('mission')
       showToast('🚗 Mission acceptée ! (⚠️ adresse du bâtiment introuvable, coût de trajet non calculé — vérifiez l\'adresse du bâtiment)','error')
+      await afficherCoutTotal()
       chronoStart()
     }
   }, (err)=>{
