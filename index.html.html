@@ -2602,6 +2602,13 @@ async function accepterMission(){
     const bat=allBats.find(b=>b.id===bon?.batiment_id)
     const prixCarb=parseFloat(document.getElementById('mission-prix-carb').value)||1.75
 
+    // Géocoder l'adresse du bâtiment à la volée si elle n'a pas déjà été calculée
+    // (avant, ça dépendait d'avoir déjà ouvert l'onglet Carte — plus maintenant)
+    if(bat && (!bat._lat || !bat._lng) && (bat.adresse || bat.ville)){
+      const coords=await geocodeAdresse(bat.adresse||'', bat.ville||'', bat.code_postal||'')
+      if(coords){ bat._lat=coords.lat; bat._lng=coords.lng }
+    }
+
     if(bat&&bat._lat&&bat._lng){
       // Calcul distance vol d'oiseau (approximation) * 1.3 pour route réelle
       const distKm=haversineKm(currentMissionLat,currentMissionLng,bat._lat,bat._lng)*1.3
@@ -2636,8 +2643,8 @@ async function accepterMission(){
       chronoStart()
       afficherCoutTotal()
     } else {
-      // Pas de coordonnées pour le bâtiment - utiliser l'API de distance
-      statusEl.textContent='✅ Position enregistrée ! (Ajoutez le code postal du bâtiment pour le calcul de distance)'
+      // L'adresse du bâtiment n'a pas pu être géolocalisée (adresse manquante/incomplète)
+      statusEl.textContent='✅ Position enregistrée ! (adresse du bâtiment introuvable pour calculer la distance)'
       await sb.from('bons_travail').update({
         statut:'en_cours',
         date_debut:new Date().toISOString(),
@@ -2645,7 +2652,7 @@ async function accepterMission(){
       }).eq('id',currentBonId)
       await loadBons()
       closeModal('mission')
-      showToast('🚗 Mission acceptée !')
+      showToast('🚗 Mission acceptée ! (⚠️ adresse du bâtiment introuvable, coût de trajet non calculé — vérifiez l\'adresse du bâtiment)','error')
       chronoStart()
     }
   }, (err)=>{
