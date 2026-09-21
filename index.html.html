@@ -3132,14 +3132,23 @@ async function rafraichirTout(){
 // ── FLUX MISSION ──
 
 // Bouton "Planifier" - ouvre un mini modal date
-function ouvrirPlanifier(){
+async function ouvrirPlanifier(){
   const dateStr = prompt('Date prévue d\'intervention (JJ/MM/AAAA) :')
   if(!dateStr) return
   const parts = dateStr.split('/')
-  if(parts.length!==3) return
+  if(parts.length!==3){ showToast('Format de date invalide (JJ/MM/AAAA)','error'); return }
   const dateISO = parts[2]+'-'+parts[1].padStart(2,'0')+'-'+parts[0].padStart(2,'0')
-  changeStatut('planifie')
-  sb.from('bons_travail').update({date_prevue:dateISO}).eq('id',currentBonId)
+  if(!currentBonId) return
+  const {error} = await sb.from('bons_travail').update({statut:'planifie', date_prevue:dateISO}).eq('id',currentBonId)
+  if(error){ showToast('Erreur : '+error.message,'error'); return }
+  await rafraichirTout()
+  renderCalendar()
+  document.querySelectorAll('.statut-btn').forEach(b=>b.classList.remove('active'))
+  const btnEl=document.getElementById('sb-planifie')
+  if(btnEl) btnEl.classList.add('active')
+  const bon=allBons.find(b=>b.id===currentBonId)
+  if(bon) document.getElementById('d-badges').innerHTML=badge(bon.statut)+' '+badge(bon.priorite)
+  showToast('📅 Bon planifié pour le '+dateStr)
 }
 
 // Override chronoPause pour demander raison
