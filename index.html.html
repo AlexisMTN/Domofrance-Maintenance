@@ -331,24 +331,31 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gray);color:va
 
       <!-- STATS -->
       <div class="page" id="page-stats">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+          <div style="font-size:13px;color:var(--text2)">Vue d'ensemble de l'activité et des coûts (bons clôturés)</div>
+          <button class="btn btn-secondary" style="font-size:12px;padding:7px 14px" onclick="ouvrirRecalculStats()">🔒 Recalculer les statistiques</button>
+        </div>
         <div class="stats-grid" style="margin-bottom:24px">
           <div class="stat-card"><div class="stat-icon si-blue">📋</div><div><div class="stat-val" id="s-total">0</div><div class="stat-label">Total bons</div></div></div>
           <div class="stat-card"><div class="stat-icon si-green">✅</div><div><div class="stat-val" id="s-term">0</div><div class="stat-label">Terminés</div></div></div>
           <div class="stat-card"><div class="stat-icon si-orange">⚙️</div><div><div class="stat-val" id="s-enc">0</div><div class="stat-label">En cours</div></div></div>
           <div class="stat-card"><div class="stat-icon si-red">🔴</div><div><div class="stat-val" id="s-urg">0</div><div class="stat-label">Urgences</div></div></div>
         </div>
+        <div class="card" style="padding:18px 20px;margin-bottom:20px">
+          <div style="font-weight:700;font-size:14px;margin-bottom:4px">💰 Coûts des interventions</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Main d'œuvre + trajet + pièces, bons clôturés uniquement</div>
+          <div id="stats-couts-summary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:18px"></div>
+          <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:10px">Détail par technicien</div>
+          <div id="stats-couts"></div>
+        </div>
+        <div class="card" style="padding:18px 20px;margin-bottom:20px">
+          <div style="font-weight:700;font-size:14px;margin-bottom:4px">🏢 Coût par bâtiment</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Nombre d'interventions, km parcourus et coût, bons clôturés uniquement</div>
+          <div id="stats-batiments"></div>
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
           <div class="card" style="padding:18px 20px"><div style="font-weight:700;font-size:14px;margin-bottom:18px">Par catégorie</div><div id="stats-cats"></div></div>
-          <div class="card" style="padding:18px 20px"><div style="font-weight:700;font-size:14px;margin-bottom:18px">Par technicien</div><div id="stats-techs"></div></div>
-        </div>
-        <div class="card" style="padding:18px 20px">
-          <div style="font-weight:700;font-size:14px;margin-bottom:4px">💰 Coûts des interventions</div>
-          <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Bons clôturés uniquement</div>
-          <div id="stats-couts"></div>
-        </div>
-        <div class="card" style="padding:18px 20px;margin-top:16px">
-          <div style="font-weight:700;font-size:14px;margin-bottom:14px">💰 Coûts des interventions</div>
-          <div id="stats-couts"></div>
+          <div class="card" style="padding:18px 20px"><div style="font-weight:700;font-size:14px;margin-bottom:18px">Par technicien (nb d'interventions)</div><div id="stats-techs"></div></div>
         </div>
       </div>
 
@@ -1848,25 +1855,6 @@ function renderStats(){
   document.getElementById('s-term').textContent=allBons.filter(b=>b.statut==='termine').length
   document.getElementById('s-enc').textContent=allBons.filter(b=>b.statut==='en_cours').length
   document.getElementById('s-urg').textContent=allBons.filter(b=>b.priorite==='urgence').length
-  // Coûts
-  const totalCout=allBons.reduce((s,b)=>s+(b.cout_total||0),0)
-  const coutMOTotal=allBons.reduce((s,b)=>s+(b.cout_mo||0),0)
-  const coutTrajTotal=allBons.reduce((s,b)=>s+(b.cout_trajet||0),0)
-  const coutPiecesTotal=allBons.reduce((s,b)=>s+(b.cout_pieces||0),0)
-  const coutEl=document.getElementById('stats-couts')
-  if(coutEl&&totalCout>0){
-    coutEl.innerHTML='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">'
-      +'<div style="background:var(--gray);border-radius:10px;padding:14px;text-align:center"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">Main oeuvre</div><div style="font-size:20px;font-weight:700;color:var(--navy)">'+coutMOTotal.toFixed(0)+' €</div></div>'
-      +'<div style="background:var(--gray);border-radius:10px;padding:14px;text-align:center"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">Trajets</div><div style="font-size:20px;font-weight:700;color:var(--orange)">'+coutTrajTotal.toFixed(0)+' €</div></div>'
-      +'<div style="background:var(--gray);border-radius:10px;padding:14px;text-align:center"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">Pieces/Conso</div><div style="font-size:20px;font-weight:700;color:var(--red)">'+coutPiecesTotal.toFixed(0)+' €</div></div>'
-      +'</div>'
-      +'<div style="background:var(--navy);border-radius:10px;padding:14px;text-align:center">'
-      +'<div style="font-size:12px;color:rgba(255,255,255,.7);margin-bottom:4px">COUT TOTAL INTERVENTIONS</div>'
-      +'<div style="font-size:28px;font-weight:700;color:#fff">'+totalCout.toFixed(2)+' €</div>'
-      +'</div>'
-  } else if(coutEl){
-    coutEl.innerHTML='<div style="color:var(--text3);font-size:13px;text-align:center;padding:20px">Configurez les taux horaires dans les fiches techniciens pour voir les coûts</div>'
-  }
   const cats=['Plomberie','Électricité','Serrurerie','Peinture','Chauffage/VMC','Espaces communs','Autre']
   const colors=['#DC0D4D','#C50A44','#42A5F5','#A8083A','#F48FB1','#1E88E5','#64B5F6']
   const byCat=cats.map((c,i)=>({name:c,n:allBons.filter(b=>b.categorie===c).length,color:colors[i]})).filter(c=>c.n>0).sort((a,b)=>b.n-a.n)
@@ -1939,7 +1927,7 @@ async function showPage(name,el){
   }
   if(name==='techniciens') renderTechs()
   if(name==='batiments') renderBatiments()
-  if(name==='stats'){renderStats();setTimeout(renderStatsCouts,100)}
+  if(name==='stats'){renderStats();setTimeout(()=>{renderStatsCouts();renderStatsBatiments()},100)}
   if(name==='historique') renderHistorique()
   if(name==='carte'){setTimeout(()=>{const m=document.getElementById('map');if(m)m.style.height='480px';initCarte()},200)}
   if(name==='planning') renderCalendar()
@@ -2418,7 +2406,7 @@ function showPage(name, el){
   if(name==='bons'){rafraichirTout().then(()=>populateFilterBat())}
   if(name==='techniciens') renderTechs()
   if(name==='batiments') renderBatiments()
-  if(name==='stats'){renderStats();setTimeout(renderStatsCouts,100)}
+  if(name==='stats'){renderStats();setTimeout(()=>{renderStatsCouts();renderStatsBatiments()},100)}
   if(name==='historique') renderHistorique()
   if(name==='carte') setTimeout(()=>{const m=document.getElementById('map');if(m)m.style.height='480px';initCarte()},200)
 
@@ -2742,35 +2730,91 @@ function renderStatsCouts(){
   const totalTrajet=bonsTermines.reduce((s,b)=>s+(b.cout_trajet||0),0)
   const totalPieces=bonsTermines.reduce((s,b)=>s+(b.cout_pieces||0),0)
   const totalGlobal=totalMO+totalTrajet+totalPieces
+  const totalKm=bonsTermines.reduce((s,b)=>s+(b.km_trajet||0),0)
+
+  const summaryEl=document.getElementById('stats-couts-summary')
+  if(summaryEl){
+    summaryEl.innerHTML=[
+      ['👷','Main d\'œuvre',totalMO.toFixed(2)+' €','var(--blue)','var(--blue-light)'],
+      ['🚗','Trajets',totalTrajet.toFixed(2)+' €','var(--orange)','var(--orange-light)'],
+      ['🔩','Pièces',totalPieces.toFixed(2)+' €','var(--green)','var(--green-light)'],
+      ['📍','Km parcourus',totalKm.toFixed(1)+' km','var(--text2)','var(--gray2)'],
+      ['💰','TOTAL',totalGlobal.toFixed(2)+' €','var(--navy)','var(--gray2)'],
+    ].map(([icon,l,v,c,bg])=>
+      '<div style="background:'+bg+';border-radius:10px;padding:12px 8px;text-align:center">'
+      +'<div style="font-size:16px;margin-bottom:2px">'+icon+'</div>'
+      +'<div style="font-size:15px;font-weight:700;color:'+c+'">'+v+'</div>'
+      +'<div style="font-size:10px;color:var(--text3);margin-top:3px">'+l+'</div>'
+      +'</div>').join('')
+  }
 
   const el = document.getElementById('stats-couts')
-  if(!el) return
-  el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">'
-    +[['Main d\'œuvre',totalMO,'var(--blue)','var(--blue-light)'],
-      ['Trajets',totalTrajet,'var(--orange)','var(--orange-light)'],
-      ['Pièces',totalPieces,'var(--green)','var(--green-light)'],
-      ['TOTAL',totalGlobal,'var(--navy)','var(--gray2)']].map(([l,v,c,bg])=>
-        '<div style="background:'+bg+';border-radius:10px;padding:14px;text-align:center">'
-        +'<div style="font-size:18px;font-weight:700;color:'+c+'">'+v.toFixed(2)+' €</div>'
-        +'<div style="font-size:11px;color:var(--text3);margin-top:3px">'+l+'</div>'
-        +'</div>').join('')
-    +'</div>'
-    // Par technicien
-    +'<div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:10px">Coût par technicien</div>'
-    +allTechs.map(t=>{
+  if(el){
+    el.innerHTML = allTechs.map(t=>{
       const bons=bonsTermines.filter(b=>b.technicien_id===t.id)
+      if(bons.length===0) return ''
       const mo=bons.reduce((s,b)=>s+(b.cout_mo||0),0)
       const trajet=bons.reduce((s,b)=>s+(b.cout_trajet||0),0)
       const pieces=bons.reduce((s,b)=>s+(b.cout_pieces||0),0)
+      const km=bons.reduce((s,b)=>s+(b.km_trajet||0),0)
       const total=mo+trajet+pieces
-      if(total===0) return ''
       return '<div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--gray);border-radius:8px;margin-bottom:8px">'
         +'<div style="width:36px;height:36px;border-radius:50%;background:var(--blue-light);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">'+(t.prenom?.[0]||'')+(t.nom?.[0]||'')+'</div>'
-        +'<div style="flex:1"><div style="font-size:13px;font-weight:600">'+t.prenom+' '+t.nom+'</div>'
-        +'<div style="font-size:11px;color:var(--text3)">MO: '+mo.toFixed(0)+'€ · Trajet: '+trajet.toFixed(0)+'€ · Pièces: '+pieces.toFixed(0)+'€</div></div>'
+        +'<div style="flex:1"><div style="font-size:13px;font-weight:600">'+t.prenom+' '+t.nom+' <span style="font-weight:400;color:var(--text3)">('+bons.length+' bon'+(bons.length>1?'s':'')+')</span></div>'
+        +'<div style="font-size:11px;color:var(--text3)">MO: '+mo.toFixed(0)+'€ · Trajet: '+trajet.toFixed(0)+'€ · Pièces: '+pieces.toFixed(0)+'€ · '+km.toFixed(1)+' km</div></div>'
         +'<div style="font-size:14px;font-weight:700;color:var(--navy)">'+total.toFixed(2)+' €</div>'
         +'</div>'
-    }).join('')
+    }).join('')||'<div style="color:var(--text3);font-size:13px;text-align:center;padding:12px">Aucun bon clôturé pour le moment</div>'
+  }
+}
+
+// ── COÛT PAR BÂTIMENT ──
+function renderStatsBatiments(){
+  const el=document.getElementById('stats-batiments')
+  if(!el) return
+  const bonsTermines=allBons.filter(b=>b.statut==='termine')
+  const lignes=allBats.map(bat=>{
+    const bons=bonsTermines.filter(b=>b.batiment_id===bat.id)
+    if(bons.length===0) return null
+    const cout=bons.reduce((s,b)=>s+(b.cout_total||0),0)
+    const km=bons.reduce((s,b)=>s+(b.km_trajet||0),0)
+    return {nom:bat.nom,ville:bat.ville,nb:bons.length,cout,km,moyenne:cout/bons.length}
+  }).filter(Boolean).sort((a,b)=>b.cout-a.cout)
+
+  if(lignes.length===0){
+    el.innerHTML='<div style="color:var(--text3);font-size:13px;text-align:center;padding:20px">Aucun bon clôturé pour le moment</div>'
+    return
+  }
+  el.innerHTML='<div style="overflow-x:auto"><table class="table"><thead><tr><th>Bâtiment</th><th>Bons clôturés</th><th>Km parcourus</th><th>Coût moyen / intervention</th><th>Coût total</th></tr></thead><tbody>'
+    +lignes.map(l=>'<tr>'
+      +'<td style="font-weight:600">'+l.nom+(l.ville?'<div style="font-size:11px;color:var(--text3);font-weight:400">'+l.ville+'</div>':'')+'</td>'
+      +'<td>'+l.nb+'</td>'
+      +'<td>'+(l.km>0?l.km.toFixed(1)+' km':'—')+'</td>'
+      +'<td>'+l.moyenne.toFixed(2)+' €</td>'
+      +'<td style="font-weight:700;color:var(--navy)">'+l.cout.toFixed(2)+' €</td>'
+      +'</tr>').join('')
+    +'<tr style="background:var(--gray)"><td style="font-weight:700">TOTAL</td><td style="font-weight:700">'+lignes.reduce((s,l)=>s+l.nb,0)+'</td>'
+    +'<td style="font-weight:700">'+lignes.reduce((s,l)=>s+l.km,0).toFixed(1)+' km</td><td></td>'
+    +'<td style="font-weight:700;color:var(--navy)">'+lignes.reduce((s,l)=>s+l.cout,0).toFixed(2)+' €</td></tr>'
+    +'</tbody></table></div>'
+}
+
+// ── RECALCUL DES STATISTIQUES (protégé par mot de passe) ──
+// Utile si le taux horaire d'un technicien ou le prix d'une pièce a été corrigé
+// après la clôture d'un bon : ça recalcule et resauvegarde le coût de tous les bons clôturés.
+async function ouvrirRecalculStats(){
+  const code=prompt('Code responsable requis pour recalculer les statistiques :')
+  if(code===null) return
+  if(code.trim().toUpperCase()!==CODE_SUPPRESSION){ showToast('Code incorrect','error'); return }
+  const termines=allBons.filter(b=>b.statut==='termine')
+  if(termines.length===0){ showToast('Aucun bon clôturé à recalculer'); return }
+  showToast('Recalcul en cours… ('+termines.length+' bons)')
+  for(const b of termines){ await recalculerCoutsBon(b.id) }
+  await loadBons()
+  renderStats()
+  renderStatsCouts()
+  renderStatsBatiments()
+  showToast('✅ Statistiques recalculées ('+termines.length+' bons)')
 }
 
 
@@ -3309,7 +3353,7 @@ function showPage(name,el){
   if(name==='bons'){rafraichirTout().then(()=>populateFilterBat())}
   if(name==='techniciens') renderTechs()
   if(name==='batiments') renderBatiments()
-  if(name==='stats'){renderStats();setTimeout(renderStatsCouts,100)}
+  if(name==='stats'){renderStats();setTimeout(()=>{renderStatsCouts();renderStatsBatiments()},100)}
   if(name==='historique') renderHistorique()
   if(name==='carte') setTimeout(()=>{
     // Force map container to have proper dimensions before init
