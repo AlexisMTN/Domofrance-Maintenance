@@ -647,11 +647,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gray);color:va
         </div>
         <div class="form-row">
           <div class="form-group"><label class="form-label">Fournisseur</label><input class="form-input" id="p-fournisseur" placeholder="Ex: Leroy Merlin, Rexel..."></div>
-          <div class="form-group"><label class="form-label">Quantité</label><input type="number" class="form-input" id="p-quantite" value="1" min="0.1" step="0.1" oninput="updatePrixPreview()"></div>
+          <div class="form-group"><label class="form-label">N° bon de commande</label><input class="form-input" id="p-bon-commande" placeholder="Ex: BC-2026-0142"></div>
         </div>
         <div class="form-row">
+          <div class="form-group"><label class="form-label">Quantité</label><input type="number" class="form-input" id="p-quantite" value="1" min="0.1" step="0.1" oninput="updatePrixPreview()"></div>
           <div class="form-group"><label class="form-label">Prix unitaire HT (€)</label><input type="number" class="form-input" id="p-prix" placeholder="0.00" step="0.01" min="0" oninput="updatePrixPreview()"></div>
-          <div class="form-group" style="display:flex;align-items:flex-end">
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="grid-column:1/-1;display:flex;align-items:flex-end">
             <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="ajouterPiece()">+ Ajouter</button>
           </div>
         </div>
@@ -1507,6 +1510,24 @@ async function genererEtEnvoyerPDF(bon,photos,comments,auteur,dureeH){
     doc.setFont('helvetica','normal');doc.setTextColor(30,30,30);doc.setFontSize(9)
     const lines=doc.splitTextToSize(bon.description,W-2*margin-6)
     lines.forEach(l=>{if(y>270){doc.addPage();y=margin};doc.text(l,margin+3,y);y+=5});y+=4
+  }
+
+  // Pièces utilisées — nom, référence et fournisseur uniquement (jamais de prix/coût dans ce document)
+  const {data:piecesPDF}=await sb.from('pieces').select('designation,quantite,reference,fournisseur').eq('bon_id',bon.id).order('created_at')
+  if(piecesPDF && piecesPDF.length>0){
+    if(y>250){doc.addPage();y=margin}
+    doc.setFillColor(...grisClair);doc.roundedRect(margin,y,W-2*margin,6,1,1,'F')
+    doc.setTextColor(...marine);doc.setFont('helvetica','bold');doc.setFontSize(9)
+    doc.text('PIÈCES UTILISÉES ('+piecesPDF.length+')',margin+3,y+4.5);y+=9
+    piecesPDF.forEach(p=>{
+      if(y>270){doc.addPage();y=margin}
+      doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);doc.setFontSize(8.5)
+      doc.text((p.quantite&&p.quantite!==1?p.quantite+' × ':'')+p.designation,margin+3,y)
+      doc.setFont('helvetica','normal');doc.setTextColor(...gris);doc.setFontSize(8)
+      const infos=[p.reference?'Réf. '+p.reference:null,p.fournisseur?p.fournisseur:null].filter(Boolean).join('  —  ')
+      if(infos) doc.text(infos,margin+3,y+4)
+      y+=infos?9:6
+    });y+=2
   }
 
   if(comments.length>0){
@@ -2606,17 +2627,18 @@ async function chargerPieces(){
     if(!data||data.length===0){
       list.innerHTML='<div style="color:var(--text3);font-size:13px;text-align:center;padding:16px">Aucune pièce ajoutée</div>'
     } else {
-      list.innerHTML='<table class="table"><thead><tr><th>Désignation</th><th>Réf.</th><th>Fournisseur</th><th>Qté</th><th>Prix unit.</th><th>Total</th><th></th></tr></thead><tbody>'
+      list.innerHTML='<table class="table"><thead><tr><th>Désignation</th><th>Réf.</th><th>Fournisseur</th><th>N° BC</th><th>Qté</th><th>Prix unit.</th><th>Total</th><th></th></tr></thead><tbody>'
         +data.map(p=>'<tr>'
           +'<td style="font-weight:600">'+p.designation+'</td>'
           +'<td style="font-size:11px;color:var(--text3)">'+(p.reference||'—')+'</td>'
           +'<td style="font-size:12px">'+(p.fournisseur||'—')+'</td>'
+          +'<td style="font-size:11px;color:var(--text3)">'+(p.bon_commande||'—')+'</td>'
           +'<td>'+p.quantite+'</td>'
           +'<td>'+parseFloat(p.prix_unitaire).toFixed(2)+'€</td>'
           +'<td style="font-weight:600;color:var(--navy)">'+(p.quantite*p.prix_unitaire).toFixed(2)+'€</td>'
           +'<td><button onclick="supprimerPiece(\''+p.id+'\' )" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:14px">✕</button></td>'
           +'</tr>').join('')
-        +'<tr style="background:var(--gray)"><td colspan="5" style="font-weight:700;text-align:right">TOTAL PIÈCES</td><td style="font-weight:700;color:var(--navy)">'+ total.toFixed(2)+'€</td><td></td></tr>'
+        +'<tr style="background:var(--gray)"><td colspan="6" style="font-weight:700;text-align:right">TOTAL PIÈCES</td><td style="font-weight:700;color:var(--navy)">'+ total.toFixed(2)+'€</td><td></td></tr>'
         +'</tbody></table>'
     }
   }
@@ -2639,14 +2661,22 @@ async function ajouterPiece(){
     designation:desig,
     reference:document.getElementById('p-reference').value||null,
     fournisseur:document.getElementById('p-fournisseur').value||null,
+    bon_commande:document.getElementById('p-bon-commande').value||null,
     quantite:parseFloat(document.getElementById('p-quantite').value)||1,
     prix_unitaire:parseFloat(document.getElementById('p-prix').value)||0,
   }
-  const {error}=await sb.from('pieces').insert([piece])
+  let {error}=await sb.from('pieces').insert([piece])
+  if(error && /bon_commande/.test(error.message||'')){
+    // La colonne n'existe pas encore côté base : on enregistre sans, pour ne pas bloquer l'ajout
+    delete piece.bon_commande
+    ;({error}=await sb.from('pieces').insert([piece]))
+    if(!error) showToast('⚠️ N° de bon de commande non sauvegardé — colonne à créer dans Supabase (voir instructions)','error')
+  }
   if(!error){
     document.getElementById('p-designation').value=''
     document.getElementById('p-reference').value=''
     document.getElementById('p-fournisseur').value=''
+    document.getElementById('p-bon-commande').value=''
     document.getElementById('p-quantite').value='1'
     document.getElementById('p-prix').value=''
     updatePrixPreview()
