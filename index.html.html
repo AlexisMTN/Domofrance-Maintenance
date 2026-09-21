@@ -178,6 +178,22 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gray);color:va
   </div>
 </div>
 
+<!-- MODE SIMPLIFIÉ (compte "Créateur uniquement") -->
+<div id="mode-simplifie" style="display:none;min-height:100vh;background:var(--gray)">
+  <div style="background:var(--navy);padding:16px 20px;display:flex;justify-content:space-between;align-items:center">
+    <div style="color:#fff;font-weight:700;font-size:15px">Domofrance — Mes demandes</div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span id="ms-username" style="color:#fff;font-size:13px"></span>
+      <button class="btn btn-secondary" style="font-size:12px;padding:6px 12px" onclick="doLogout()">Déconnexion</button>
+    </div>
+  </div>
+  <div style="max-width:640px;margin:0 auto;padding:20px 16px">
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:14px;font-size:15px;margin-bottom:20px" onclick="openModal('create')">+ Nouvelle demande</button>
+    <div style="font-weight:700;font-size:14px;color:var(--navy);margin-bottom:12px">Mes demandes enregistrées</div>
+    <div id="ms-liste"></div>
+  </div>
+</div>
+
 <!-- APP -->
 <div class="app">
   <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
@@ -962,13 +978,36 @@ async function doRegister(){
 async function doLogout(){
   if(!confirm('Se déconnecter ?')) return
   await sb.auth.signOut()
+  document.getElementById('mode-simplifie').style.display='none'
+  document.querySelector('.app').style.display=''
   showLoginPage()
 }
 
-function onLogin(user){
+async function onLogin(user){
   hideLoginPage()
+  currentUserId = user.id
+  currentUserEmail = user.email
   const name=user.user_metadata?.full_name||user.email.split('@')[0]
   const initials=name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2)
+
+  // Vérification du rôle : par défaut (compte inconnu ou erreur), on considère le compte
+  // comme "créateur uniquement" par sécurité — seuls les comptes explicitement marqués
+  // "admin" dans la table profils ont accès à l'appli complète.
+  let role = 'operateur'
+  try{
+    const {data} = await sb.from('profils').select('role').eq('user_id', user.id).maybeSingle()
+    if(data && data.role === 'admin') role = 'admin'
+  }catch(e){ console.warn('Lecture du rôle impossible, accès restreint par défaut', e) }
+  currentUserRole = role
+
+  if(role !== 'admin'){
+    document.getElementById('ms-username').textContent = name
+    document.getElementById('mode-simplifie').style.display = 'block'
+    document.querySelector('.app').style.display = 'none'
+    await renderMesDemandes()
+    return
+  }
+
   document.getElementById('topbar-avatar').textContent=initials
   document.getElementById('topbar-name').textContent=name
   document.getElementById('sidebar-avatar').textContent=initials
@@ -996,6 +1035,32 @@ sb.auth.onAuthStateChange((event,session)=>{
 
 // ── DATA ──
 let allBons=[], allTechs=[], allBats=[], bonPhotos={}
+let currentUserRole='admin', currentUserId=null, currentUserEmail=null
+
+async function renderMesDemandes(){
+  const {data,error} = await sb.from('bons_travail').select('*, batiments(nom,ville), techniciens(prenom,nom)').eq('cree_par_id', currentUserId).order('created_at',{ascending:false})
+  const listEl = document.getElementById('ms-liste')
+  if(!listEl) return
+  if(error){ listEl.innerHTML='<div style="color:var(--text3);font-size:13px;text-align:center;padding:20px">Erreur de chargement</div>'; return }
+  if(!data || data.length===0){
+    listEl.innerHTML='<div style="color:var(--text3);font-size:13px;text-align:center;padding:20px">Aucune demande enregistrée pour le moment</div>'
+    return
+  }
+  const badges={nouveau:['Nouveau','var(--blue)','var(--blue-light)'],planifie:['Planifié','#1565C0','#E3F2FD'],en_cours:['En cours','var(--orange)','var(--orange-light)'],en_attente:['En attente','#EF6C00','#FFF3E0'],termine:['Terminé','var(--green)','var(--green-light)'],annule:['Annulé','var(--text3)','var(--gray)']}
+  listEl.innerHTML = data.map(b=>{
+    const [label,color,bg]=badges[b.statut]||['—','var(--text3)','var(--gray)']
+    return '<div class="card" style="padding:14px 16px;margin-bottom:10px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
+      +'<div><div style="font-weight:600;font-size:14px">'+b.titre+'</div>'
+      +'<div style="font-size:12px;color:var(--text3);margin-top:2px">'+(b.batiments?.nom||'—')+(b.batiments?.ville?', '+b.batiments.ville:'')+'</div>'
+      +(b.techniciens?'<div style="font-size:12px;color:var(--text3);margin-top:2px">👷 '+b.techniciens.prenom+' '+b.techniciens.nom+'</div>':'')
+      +'</div>'
+      +'<span style="background:'+bg+';color:'+color+';font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap">'+label+'</span>'
+      +'</div>'
+      +'<div style="font-size:11px;color:var(--text3);margin-top:8px">Créé le '+new Date(b.created_at).toLocaleDateString('fr-FR')+'</div>'
+      +'</div>'
+  }).join('')
+}
 let currentFilter='all', currentBonId=null, currentBatId=null, currentEditBatId=null, createPhotoFiles=[]
 let calDate=new Date()
 
@@ -1675,8 +1740,13 @@ async function createBon(){
   if(!titre) return
   const btn=document.getElementById('btn-create')
   btn.textContent='Création…';btn.disabled=true
-  const payload={titre,categorie:document.getElementById('f-cat').value,priorite:document.getElementById('f-prio').value,statut:'nouveau',batiment_id:document.getElementById('f-bat').value||null,technicien_id:document.getElementById('f-tech').value||null,zone:document.getElementById('f-zone').value||null,description:document.getElementById('f-desc').value||null}
-  const {data:newBon,error}=await sb.from('bons_travail').insert([payload]).select().single()
+  const payload={titre,categorie:document.getElementById('f-cat').value,priorite:document.getElementById('f-prio').value,statut:'nouveau',batiment_id:document.getElementById('f-bat').value||null,technicien_id:document.getElementById('f-tech').value||null,zone:document.getElementById('f-zone').value||null,description:document.getElementById('f-desc').value||null,cree_par_id:currentUserId,cree_par_email:currentUserEmail}
+  let {data:newBon,error}=await sb.from('bons_travail').insert([payload]).select().single()
+  if(error && /cree_par/.test(error.message||'')){
+    // Colonnes pas encore créées côté base : on enregistre quand même le bon, sans le lien créateur
+    delete payload.cree_par_id; delete payload.cree_par_email
+    ;({data:newBon,error}=await sb.from('bons_travail').insert([payload]).select().single())
+  }
   if(!error&&newBon&&createPhotoFiles.length>0){
     for(const file of createPhotoFiles){
       const ext=file.name.split('.').pop()
@@ -1691,11 +1761,15 @@ async function createBon(){
     closeModal('create')
     document.getElementById('f-titre').value='';document.getElementById('f-desc').value=''
     document.getElementById('f-photos-preview').innerHTML='';createPhotoFiles=[]
-    await loadBons();await loadBonPhotos();renderDashboard();renderBonsTable()
-    // Notifier si technicien assigné
-    if(payload.technicien_id){
-      const tech=allTechs.find(t=>t.id===payload.technicien_id)
-      if(tech&&newBon) notifierAssignation(newBon,tech.prenom+' '+tech.nom)
+    if(currentUserRole==='admin'){
+      await loadBons();await loadBonPhotos();renderDashboard();renderBonsTable()
+      // Notifier si technicien assigné
+      if(payload.technicien_id){
+        const tech=allTechs.find(t=>t.id===payload.technicien_id)
+        if(tech&&newBon) notifierAssignation(newBon,tech.prenom+' '+tech.nom)
+      }
+    } else {
+      await renderMesDemandes()
     }
   } else showToast('Erreur: '+error.message,'error')
 }
