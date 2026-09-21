@@ -353,6 +353,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gray);color:va
           <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Nombre d'interventions, km parcourus et coût, bons clôturés uniquement</div>
           <div id="stats-batiments"></div>
         </div>
+        <div class="card" style="padding:18px 20px;margin-bottom:20px">
+          <div style="font-weight:700;font-size:14px;margin-bottom:4px">📋 Détail des bons clôturés</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Suppression définitive possible ici, protégée par le code responsable</div>
+          <div id="stats-bons-liste"></div>
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
           <div class="card" style="padding:18px 20px"><div style="font-weight:700;font-size:14px;margin-bottom:18px">Par catégorie</div><div id="stats-cats"></div></div>
           <div class="card" style="padding:18px 20px"><div style="font-weight:700;font-size:14px;margin-bottom:18px">Par technicien (nb d'interventions)</div><div id="stats-techs"></div></div>
@@ -1927,7 +1932,7 @@ async function showPage(name,el){
   }
   if(name==='techniciens') renderTechs()
   if(name==='batiments') renderBatiments()
-  if(name==='stats'){renderStats();setTimeout(()=>{renderStatsCouts();renderStatsBatiments()},100)}
+  if(name==='stats'){renderStats();setTimeout(()=>{renderStatsCouts();renderStatsBatiments();renderStatsBonsListe()},100)}
   if(name==='historique') renderHistorique()
   if(name==='carte'){setTimeout(()=>{const m=document.getElementById('map');if(m)m.style.height='480px';initCarte()},200)}
   if(name==='planning') renderCalendar()
@@ -2178,25 +2183,64 @@ async function confirmerSuppression(){
   }
   
   errEl.style.display='none'
-  
-  // Supprimer photos du storage
-  const {data:photos}=await sb.from('photos').select('url').eq('bon_id',currentBonId)
+  await supprimerBonDefinitivement(currentBonId)
+  closeModal('supprimer')
+  closeModal('detail')
+  await loadBons();await loadBonPhotos();renderDashboard();renderBonsTable()
+  showToast('Bon supprimé définitivement')
+}
+
+// Suppression complète d'un bon (photos storage + commentaires + photos + pièces + le bon lui-même)
+// Utilisée à la fois par la fenêtre de détail et par la liste dans Statistiques.
+async function supprimerBonDefinitivement(bonId){
+  const {data:photos}=await sb.from('photos').select('url').eq('bon_id',bonId)
   if(photos&&photos.length>0){
     const paths=photos.map(p=>{
       try{const u=new URL(p.url);return u.pathname.split('/photos/')[1]}catch(e){return null}
     }).filter(Boolean)
     if(paths.length>0) await sb.storage.from('photos').remove(paths)
   }
-  
-  // Supprimer commentaires, photos DB, puis bon
-  await sb.from('commentaires').delete().eq('bon_id',currentBonId)
-  await sb.from('photos').delete().eq('bon_id',currentBonId)
-  await sb.from('bons_travail').delete().eq('id',currentBonId)
-  
-  closeModal('supprimer')
-  closeModal('detail')
-  await loadBons();await loadBonPhotos();renderDashboard();renderBonsTable()
-  showToast('Bon supprimé définitivement')
+  await sb.from('commentaires').delete().eq('bon_id',bonId)
+  await sb.from('photos').delete().eq('bon_id',bonId)
+  await sb.from('pieces').delete().eq('bon_id',bonId)
+  await sb.from('bons_travail').delete().eq('id',bonId)
+}
+
+// Suppression directe depuis l'onglet Statistiques, protégée par le code responsable
+async function supprimerBonDepuisStats(bonId, titre){
+  const code=prompt('Code responsable requis pour supprimer définitivement le bon\n« '+titre+' » :')
+  if(code===null) return
+  if(code.trim().toUpperCase()!==CODE_SUPPRESSION){ showToast('Code incorrect','error'); return }
+  if(!confirm('Supprimer définitivement ce bon ainsi que ses photos, commentaires et pièces liées ?\nCette action est irréversible.')) return
+  await supprimerBonDefinitivement(bonId)
+  await loadBons();await loadBonPhotos()
+  renderStats();renderStatsCouts();renderStatsBatiments();renderStatsBonsListe()
+  showToast('🗑️ Bon supprimé définitivement')
+}
+
+// ── LISTE DES BONS CLÔTURÉS (avec suppression protégée) ──
+function renderStatsBonsListe(){
+  const el=document.getElementById('stats-bons-liste')
+  if(!el) return
+  const termines=allBons.filter(b=>b.statut==='termine').sort((a,b)=>new Date(b.date_fin||b.updated_at)-new Date(a.date_fin||a.updated_at))
+  if(termines.length===0){
+    el.innerHTML='<div style="color:var(--text3);font-size:13px;text-align:center;padding:20px">Aucun bon clôturé pour le moment</div>'
+    return
+  }
+  el.innerHTML='<div style="overflow-x:auto"><table class="table"><thead><tr><th>N°</th><th>Titre</th><th>Bâtiment</th><th>Technicien</th><th>Clôturé le</th><th>Coût total</th><th></th></tr></thead><tbody>'
+    +termines.map(b=>{
+      const titreEsc=(b.titre||'').replace(/'/g,"\\'").replace(/"/g,'&quot;')
+      return '<tr>'
+        +'<td style="font-weight:600;font-size:12px;color:var(--text3)">#'+(b.numero||'—')+'</td>'
+        +'<td style="font-weight:600">'+b.titre+'</td>'
+        +'<td>'+(b.batiments?.nom||'—')+'</td>'
+        +'<td>'+(b.techniciens?b.techniciens.prenom+' '+b.techniciens.nom:'—')+'</td>'
+        +'<td style="font-size:12px;color:var(--text3)">'+(b.date_fin?new Date(b.date_fin).toLocaleDateString('fr-FR'):'—')+'</td>'
+        +'<td style="font-weight:700;color:var(--navy)">'+(b.cout_total||0).toFixed(2)+' €</td>'
+        +'<td><button class="btn btn-danger" style="font-size:11px;padding:5px 10px;white-space:nowrap" onclick="supprimerBonDepuisStats(\''+b.id+'\',\''+titreEsc+'\')">🔒 Supprimer</button></td>'
+        +'</tr>'
+    }).join('')
+    +'</tbody></table></div>'
 }
 
 
@@ -2406,7 +2450,7 @@ function showPage(name, el){
   if(name==='bons'){rafraichirTout().then(()=>populateFilterBat())}
   if(name==='techniciens') renderTechs()
   if(name==='batiments') renderBatiments()
-  if(name==='stats'){renderStats();setTimeout(()=>{renderStatsCouts();renderStatsBatiments()},100)}
+  if(name==='stats'){renderStats();setTimeout(()=>{renderStatsCouts();renderStatsBatiments();renderStatsBonsListe()},100)}
   if(name==='historique') renderHistorique()
   if(name==='carte') setTimeout(()=>{const m=document.getElementById('map');if(m)m.style.height='480px';initCarte()},200)
 
@@ -2814,6 +2858,7 @@ async function ouvrirRecalculStats(){
   renderStats()
   renderStatsCouts()
   renderStatsBatiments()
+  renderStatsBonsListe()
   showToast('✅ Statistiques recalculées ('+termines.length+' bons)')
 }
 
@@ -3353,7 +3398,7 @@ function showPage(name,el){
   if(name==='bons'){rafraichirTout().then(()=>populateFilterBat())}
   if(name==='techniciens') renderTechs()
   if(name==='batiments') renderBatiments()
-  if(name==='stats'){renderStats();setTimeout(()=>{renderStatsCouts();renderStatsBatiments()},100)}
+  if(name==='stats'){renderStats();setTimeout(()=>{renderStatsCouts();renderStatsBatiments();renderStatsBonsListe()},100)}
   if(name==='historique') renderHistorique()
   if(name==='carte') setTimeout(()=>{
     // Force map container to have proper dimensions before init
