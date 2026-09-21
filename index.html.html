@@ -3450,6 +3450,10 @@ async function init(){
   renderDashboard();renderCalendar()
   await loadRecurrences()
   sb.channel('bons').on('postgres_changes',{event:'*',schema:'public',table:'bons_travail'},()=>{loadBons().then(async()=>{await loadBonPhotos();populateFilterBat();renderDashboard();renderBonsTable();renderStats()})}).subscribe()
+  // Synchronisation en temps réel des fiches technicien (taux horaire, assurance, maintenance véhicule…)
+  // pour que le coût du trajet et de la main d'œuvre soit toujours calculé avec les tarifs à jour,
+  // même si la fiche a été modifiée depuis un autre appareil pendant que celui-ci est déjà ouvert.
+  sb.channel('techniciens').on('postgres_changes',{event:'*',schema:'public',table:'techniciens'},()=>{loadTechs().then(()=>{renderTechs();renderDashboard()})}).subscribe()
   setTimeout(supprimerBonsExpires,3000)
 }
 
