@@ -1153,6 +1153,7 @@ function showChoixArretChrono(){
   const div=document.createElement('div')
   div.id='modal-choix-arret'
   div.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:flex;align-items:center;justify-content:center;padding:16px'
+  div.onclick=(e)=>{ if(e.target===div) fermerChoixArret() }
   div.innerHTML='<div style="background:#fff;border-radius:14px;padding:24px;max-width:360px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.2)">'
     +'<div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:6px">Arrêt du chronomètre</div>'
     +'<div style="font-size:13px;color:var(--text2);margin-bottom:20px">Que souhaitez-vous faire ?</div>'
@@ -2071,6 +2072,7 @@ async function showPage(name,el){
 function openModal(id){document.getElementById('modal-'+id).style.display='flex'}
 function closeModal(id){
   document.getElementById('modal-'+id).style.display='none'
+  fermerChoixArret()
   if(id==='detail'){
     // Ne pas reset le chrono si le bon est en cours
     const bon=allBons.find(b=>b.id===currentBonId)
@@ -3617,6 +3619,7 @@ function populateRecurrenceSelects(){
 // Override showPage pour charger historique et recurrences
 const origShowPage=showPage
 function showPage(name,el){
+  fermerChoixArret()
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'))
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'))
   document.getElementById('page-'+name).classList.add('active')
