@@ -472,21 +472,42 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gray);color:va
             <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;margin-bottom:10px">📷 Photos de l'intervention</div>
             <div class="photos-grid" id="d-photos"></div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
-              <label style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px;border:2px dashed #FFA726;border-radius:8px;cursor:pointer;font-size:12px;color:var(--orange);font-weight:600;background:var(--orange-light);text-align:center">
-                📷 Photo AVANT
-                <span style="font-size:10px;font-weight:400;color:var(--text3)">État initial</span>
-                <input type="file" accept="image/*" style="display:none" onchange="uploadPhotoLabeled(event,'avant')">
-              </label>
-              <label style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px;border:2px dashed #66BB6A;border-radius:8px;cursor:pointer;font-size:12px;color:var(--green);font-weight:600;background:var(--green-light);text-align:center">
-                📷 Photo APRÈS
-                <span style="font-size:10px;font-weight:400;color:var(--text3)">Après intervention</span>
-                <input type="file" accept="image/*" style="display:none" onchange="uploadPhotoLabeled(event,'apres')">
-              </label>
+              <div style="border:2px dashed #FFA726;border-radius:8px;padding:8px;background:var(--orange-light);text-align:center">
+                <div style="font-size:12px;color:var(--orange);font-weight:600">📷 Photo AVANT</div>
+                <div style="font-size:10px;font-weight:400;color:var(--text3);margin-bottom:6px">État initial</div>
+                <div style="display:flex;gap:6px">
+                  <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:3px;padding:6px 4px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;color:#fff;background:var(--orange)">📷 Prendre
+                    <input type="file" accept="image/*" capture="environment" style="display:none" onchange="uploadPhotoLabeled(event,'avant')">
+                  </label>
+                  <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:3px;padding:6px 4px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;color:var(--orange);background:#fff;border:1px solid var(--orange)">🖼️ Importer
+                    <input type="file" accept="image/*" style="display:none" onchange="uploadPhotoLabeled(event,'avant')">
+                  </label>
+                </div>
+              </div>
+              <div style="border:2px dashed #66BB6A;border-radius:8px;padding:8px;background:var(--green-light);text-align:center">
+                <div style="font-size:12px;color:var(--green);font-weight:600">📷 Photo APRÈS</div>
+                <div style="font-size:10px;font-weight:400;color:var(--text3);margin-bottom:6px">Après intervention</div>
+                <div style="display:flex;gap:6px">
+                  <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:3px;padding:6px 4px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;color:#fff;background:var(--green)">📷 Prendre
+                    <input type="file" accept="image/*" capture="environment" style="display:none" onchange="uploadPhotoLabeled(event,'apres')">
+                  </label>
+                  <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:3px;padding:6px 4px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;color:var(--green);background:#fff;border:1px solid var(--green)">🖼️ Importer
+                    <input type="file" accept="image/*" style="display:none" onchange="uploadPhotoLabeled(event,'apres')">
+                  </label>
+                </div>
+              </div>
             </div>
-            <label style="display:flex;align-items:center;justify-content:center;gap:8px;padding:8px;border:2px dashed var(--border);border-radius:8px;cursor:pointer;font-size:12px;color:var(--text3);font-weight:500;background:var(--gray);margin-top:6px">
-              📎 Autre photo
-              <input type="file" accept="image/*" multiple style="display:none" onchange="uploadPhoto(event)">
-            </label>
+            <div style="border:2px dashed var(--border);border-radius:8px;padding:8px;background:var(--gray);margin-top:6px;text-align:center">
+              <div style="font-size:12px;color:var(--text3);font-weight:500;margin-bottom:6px">📎 Autre photo</div>
+              <div style="display:flex;gap:6px">
+                <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:3px;padding:6px 4px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;color:#fff;background:var(--text2)">📷 Prendre
+                  <input type="file" accept="image/*" capture="environment" style="display:none" onchange="uploadPhoto(event)">
+                </label>
+                <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:3px;padding:6px 4px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;color:var(--text2);background:#fff;border:1px solid var(--text3)">🖼️ Importer
+                  <input type="file" accept="image/*" multiple style="display:none" onchange="uploadPhoto(event)">
+                </label>
+              </div>
+            </div>
           </div>
           <div>
             <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;margin-bottom:10px">💬 Commentaires</div>
@@ -554,11 +575,17 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gray);color:va
       <div class="form-group"><label class="form-label">Clôturé par</label><div id="terminer-auteur-display" style="background:var(--gray);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;font-weight:600;color:var(--text)">—</div><input type="hidden" id="terminer-auteur"></div>
       <div class="form-group">
         <label class="form-label">📷 Photo APRÈS intervention (optionnel)</label>
-        <label style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:14px;border:2px dashed #66BB6A;border-radius:8px;cursor:pointer;font-size:13px;color:var(--green);font-weight:600;background:var(--green-light)">
-          📷 Ajouter la photo finale
-          <span style="font-size:11px;font-weight:400;color:var(--text3)">Preuve de l'intervention</span>
-          <input type="file" accept="image/*" style="display:none" id="terminer-photo" onchange="previewTerminerPhoto(event)">
-        </label>
+        <div style="border:2px dashed #66BB6A;border-radius:8px;padding:10px;background:var(--green-light);text-align:center">
+          <div style="font-size:12px;color:var(--green);font-weight:600">Preuve de l'intervention</div>
+          <div style="display:flex;gap:6px;margin-top:6px">
+            <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:8px 4px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;color:#fff;background:var(--green)">📷 Prendre
+              <input type="file" accept="image/*" capture="environment" style="display:none" id="terminer-photo-cam" onchange="previewTerminerPhoto(event)">
+            </label>
+            <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:8px 4px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;color:var(--green);background:#fff;border:1px solid var(--green)">🖼️ Importer
+              <input type="file" accept="image/*" style="display:none" id="terminer-photo-file" onchange="previewTerminerPhoto(event)">
+            </label>
+          </div>
+        </div>
         <div id="terminer-photo-preview" style="margin-top:8px"></div>
       </div>
       <div class="form-group"><label class="form-label">Commentaire de clôture (optionnel)</label><textarea class="form-textarea" id="terminer-comment" placeholder="Décrivez le travail réalisé…"></textarea></div>
@@ -1434,12 +1461,16 @@ function ouvrirTerminer(){
   document.getElementById('terminer-auteur').value=''
   document.getElementById('terminer-comment').value=''
   document.getElementById('terminer-photo-preview').innerHTML=''
-  document.getElementById('terminer-photo').value=''
+  document.getElementById('terminer-photo-cam').value=''
+  document.getElementById('terminer-photo-file').value=''
+  terminerPhotoFile=null
   openModal('terminer')
 }
 
+let terminerPhotoFile=null
 function previewTerminerPhoto(e){
   const file=e.target.files[0];if(!file) return
+  terminerPhotoFile=file
   const url=URL.createObjectURL(file)
   document.getElementById('terminer-photo-preview').innerHTML='<img src="'+url+'" style="width:100%;max-height:150px;object-fit:cover;border-radius:8px;border:1px solid var(--border)">'
 }
@@ -3293,7 +3324,9 @@ function ouvrirTerminer(){
   }
   document.getElementById('terminer-comment').value=''
   document.getElementById('terminer-photo-preview').innerHTML=''
-  document.getElementById('terminer-photo').value=''
+  document.getElementById('terminer-photo-cam').value=''
+  document.getElementById('terminer-photo-file').value=''
+  terminerPhotoFile=null
   signatureData=null
   openModal('terminer')
 }
@@ -3313,7 +3346,7 @@ async function doConfirmerTerminer(){
   const auteur=document.getElementById('terminer-auteur').value.trim()
   if(!auteur){showToast('Veuillez indiquer votre nom','error');return}
   const comment=document.getElementById('terminer-comment').value.trim()
-  const photoFile=document.getElementById('terminer-photo').files[0]
+  const photoFile=terminerPhotoFile
   const dureeH=parseFloat((chronoSeconds/3600).toFixed(2))
 
   if(photoFile){
