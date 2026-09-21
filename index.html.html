@@ -2629,17 +2629,22 @@ async function accepterMission(){
       const coutTrajet=parseFloat((coutCarb+coutVehiculeJour).toFixed(2))
       
       // Sauvegarder dans le bon
-      await sb.from('bons_travail').update({
+      const {error:erreurTrajet}=await sb.from('bons_travail').update({
         km_trajet:parseFloat(distKm.toFixed(2)),
         cout_trajet:coutTrajet,
         prix_carburant:prixCarb,
         statut:'en_cours',
         date_debut:new Date().toISOString()
       }).eq('id',currentBonId)
+      if(erreurTrajet) console.error('accepterMission (trajet):',erreurTrajet)
 
       await loadBons(); renderDashboard(); renderBonsTable()
       closeModal('mission')
-      showToast('🚗 Mission acceptée ! Distance: '+distKm.toFixed(1)+'km · Coût trajet: '+coutTrajet+'€')
+      if(erreurTrajet){
+        showToast('⚠️ Coût de trajet NON sauvegardé : '+erreurTrajet.message,'error')
+      } else {
+        showToast('🚗 Mission acceptée ! Distance: '+distKm.toFixed(1)+'km · Coût trajet: '+coutTrajet+'€')
+      }
       await afficherCoutTotal()
       chronoStart()
     } else {
@@ -2767,7 +2772,8 @@ async function recalculerCoutsBon(bonId){
   const {data:pieces}=await sb.from('pieces').select('quantite,prix_unitaire').eq('bon_id',bonId)
   const coutPieces=parseFloat(((pieces||[]).reduce((s,p)=>s+(p.quantite*p.prix_unitaire),0)).toFixed(2))
   const coutTotal=parseFloat((coutMO+coutTrajet+coutPieces).toFixed(2))
-  await sb.from('bons_travail').update({cout_mo:coutMO,cout_pieces:coutPieces,cout_total:coutTotal}).eq('id',bonId)
+  const {error}=await sb.from('bons_travail').update({cout_mo:coutMO,cout_pieces:coutPieces,cout_total:coutTotal}).eq('id',bonId)
+  if(error){ console.error('recalculerCoutsBon:',error); showToast('⚠️ Coût non sauvegardé : '+error.message,'error') }
   const idx=allBons.findIndex(b=>b.id===bonId)
   if(idx!==-1) allBons[idx]={...allBons[idx],cout_mo:coutMO,cout_pieces:coutPieces,cout_total:coutTotal}
   return {coutMO,coutTrajet,coutPieces,coutTotal,dureeH,tauxHoraire,nbPieces:(pieces||[]).length}
