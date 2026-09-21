@@ -216,6 +216,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gray);color:va
       <div class="nav-item" onclick="showPage('carte',this)">🗺️ Carte</div>
       <div class="nav-item" onclick="showPage('stats',this)">📈 Statistiques</div>
       <div class="nav-item" onclick="showPage('historique',this)">🗂️ Historique</div>
+      <div class="nav-item" id="nav-acces" onclick="showPage('acces',this);setTimeout(renderAccesUtilisateurs,200)">🔐 Gestion des accès</div>
     </nav>
     <div class="sidebar-footer">
       <div class="user-row">
@@ -365,6 +366,16 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gray);color:va
           <div id="stats-couts"></div>
         </div>
         <div class="card" style="padding:18px 20px;margin-bottom:20px">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:4px">
+            <div style="font-weight:700;font-size:14px">📈 Évolution des coûts (12 derniers mois)</div>
+            <select class="form-select" id="histo-cout-bat" style="width:auto;font-size:12px;padding:6px 10px" onchange="renderHistoriqueCouts()">
+              <option value="">Tous les bâtiments</option>
+            </select>
+          </div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Somme des coûts (main d'œuvre + trajet + pièces) des bons clôturés, par mois</div>
+          <div id="histo-couts"></div>
+        </div>
+        <div class="card" style="padding:18px 20px;margin-bottom:20px">
           <div style="font-weight:700;font-size:14px;margin-bottom:4px">🏢 Coût par bâtiment</div>
           <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Nombre d'interventions, km parcourus et coût, bons clôturés uniquement</div>
           <div id="stats-batiments"></div>
@@ -405,6 +416,35 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gray);color:va
           <button class="btn btn-danger" style="font-size:12px;padding:7px 14px" onclick="supprimerTousLesBonsClotures()">🔒 Repartir sur une base propre (supprimer tous les bons clôturés)</button>
         </div>
         <div id="historique-list"></div>
+      </div>
+
+      <!-- GESTION DES ACCÈS -->
+      <div class="page" id="page-acces">
+        <div class="card" style="padding:18px 20px;margin-bottom:20px">
+          <div style="font-weight:700;font-size:14px;margin-bottom:4px">🔐 Ajouter / modifier un accès</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:16px">La personne doit se créer un compte avec cet email (ou en avoir déjà un) pour que l'accès s'applique. Un compte non listé ici est automatiquement en accès restreint (créateur uniquement), par sécurité.</div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Email *</label><input class="form-input" id="ac-email" placeholder="prenom.nom@domofrance.fr"></div>
+            <div class="form-group"><label class="form-label">Nom (facultatif)</label><input class="form-input" id="ac-nom" placeholder="Prénom Nom"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Rôle</label>
+              <select class="form-select" id="ac-role">
+                <option value="operateur">Créateur uniquement (voit et crée uniquement ses propres bons)</option>
+                <option value="admin">Accès complet (comme vous)</option>
+              </select>
+            </div>
+            <div class="form-group" style="display:flex;align-items:flex-end">
+              <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="enregistrerAccesUtilisateur()">Enregistrer l'accès</button>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="padding:18px 20px">
+          <div style="font-weight:700;font-size:14px;margin-bottom:4px">Accès configurés</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Modifiez le rôle d'un compte existant en le ré-enregistrant ci-dessus avec le même email</div>
+          <div id="acces-liste"></div>
+        </div>
       </div>
 
     </div>
@@ -992,12 +1032,18 @@ async function onLogin(user){
 
   // Vérification du rôle : par défaut (compte inconnu ou erreur), on considère le compte
   // comme "créateur uniquement" par sécurité — seuls les comptes explicitement marqués
-  // "admin" dans la table profils ont accès à l'appli complète.
+  // "admin" (via profils ou acces_utilisateurs) ont accès à l'appli complète.
   let role = 'operateur'
   try{
     const {data} = await sb.from('profils').select('role').eq('user_id', user.id).maybeSingle()
     if(data && data.role === 'admin') role = 'admin'
-  }catch(e){ console.warn('Lecture du rôle impossible, accès restreint par défaut', e) }
+  }catch(e){ console.warn('Lecture du rôle (profils) impossible, accès restreint par défaut', e) }
+  if(role !== 'admin'){
+    try{
+      const {data} = await sb.from('acces_utilisateurs').select('role').eq('email', user.email.toLowerCase()).maybeSingle()
+      if(data && data.role === 'admin') role = 'admin'
+    }catch(e){ console.warn('Lecture du rôle (acces_utilisateurs) impossible, accès restreint par défaut', e) }
+  }
   currentUserRole = role
 
   if(role !== 'admin'){
@@ -1061,6 +1107,46 @@ async function renderMesDemandes(){
       +'<div style="font-size:11px;color:var(--text3);margin-top:8px">Créé le '+new Date(b.created_at).toLocaleDateString('fr-FR')+'</div>'
       +'</div>'
   }).join('')
+}
+
+// ── GESTION DES ACCÈS (visible uniquement en mode admin) ──
+async function renderAccesUtilisateurs(){
+  const listEl = document.getElementById('acces-liste')
+  if(!listEl) return
+  const {data,error} = await sb.from('acces_utilisateurs').select('*').order('created_at',{ascending:false})
+  if(error){ listEl.innerHTML='<div style="color:var(--text3);font-size:13px;text-align:center;padding:20px">Impossible de charger la liste — vérifiez que la table acces_utilisateurs existe (voir migration fournie)</div>'; return }
+  if(!data || data.length===0){
+    listEl.innerHTML='<div style="color:var(--text3);font-size:13px;text-align:center;padding:20px">Aucun accès configuré pour le moment — tous les comptes sont en accès restreint par défaut</div>'
+    return
+  }
+  listEl.innerHTML = '<table class="table"><thead><tr><th>Email</th><th>Nom</th><th>Rôle</th><th></th></tr></thead><tbody>'
+    +data.map(a=>'<tr>'
+      +'<td style="font-weight:600">'+a.email+'</td>'
+      +'<td>'+(a.nom||'—')+'</td>'
+      +'<td>'+(a.role==='admin'?'<span style="color:var(--green);font-weight:600">🔓 Accès complet</span>':'<span style="color:var(--text3)">🔒 Créateur uniquement</span>')+'</td>'
+      +'<td><button class="btn btn-secondary" style="font-size:11px;padding:5px 10px" onclick="supprimerAccesUtilisateur(\''+a.email+'\')">Supprimer</button></td>'
+      +'</tr>').join('')
+    +'</tbody></table>'
+}
+
+async function enregistrerAccesUtilisateur(){
+  const email = document.getElementById('ac-email').value.trim().toLowerCase()
+  const nom = document.getElementById('ac-nom').value.trim() || null
+  const role = document.getElementById('ac-role').value
+  if(!email){ showToast('Email obligatoire','error'); return }
+  const {error} = await sb.from('acces_utilisateurs').upsert([{email,nom,role}], {onConflict:'email'})
+  if(error){ showToast('Erreur : '+error.message,'error'); return }
+  document.getElementById('ac-email').value=''
+  document.getElementById('ac-nom').value=''
+  document.getElementById('ac-role').value='operateur'
+  showToast('✅ Accès enregistré pour '+email)
+  await renderAccesUtilisateurs()
+}
+
+async function supprimerAccesUtilisateur(email){
+  if(!confirm('Retirer l\'accès configuré pour '+email+' ?\nLa personne repassera automatiquement en accès restreint.')) return
+  await sb.from('acces_utilisateurs').delete().eq('email',email)
+  await renderAccesUtilisateurs()
 }
 let currentFilter='all', currentBonId=null, currentBatId=null, currentEditBatId=null, createPhotoFiles=[]
 let calDate=new Date()
@@ -2039,7 +2125,7 @@ async function showPage(name,el){
   }
   if(name==='techniciens') renderTechs()
   if(name==='batiments') renderBatiments()
-  if(name==='stats'){renderStats();setTimeout(()=>{renderStatsCouts();renderStatsBatiments();renderStatsBonsListe()},100)}
+  if(name==='stats'){renderStats();setTimeout(()=>{renderStatsCouts();renderStatsBatiments();renderStatsBonsListe();renderHistoriqueCouts()},100)}
   if(name==='historique') renderHistorique()
   if(name==='carte'){setTimeout(()=>{const m=document.getElementById('map');if(m)m.style.height='480px';initCarte()},200)}
   if(name==='planning') renderCalendar()
@@ -2574,7 +2660,7 @@ function showPage(name, el){
   if(name==='bons'){rafraichirTout().then(()=>populateFilterBat())}
   if(name==='techniciens') renderTechs()
   if(name==='batiments') renderBatiments()
-  if(name==='stats'){renderStats();setTimeout(()=>{renderStatsCouts();renderStatsBatiments();renderStatsBonsListe()},100)}
+  if(name==='stats'){renderStats();setTimeout(()=>{renderStatsCouts();renderStatsBatiments();renderStatsBonsListe();renderHistoriqueCouts()},100)}
   if(name==='historique') renderHistorique()
   if(name==='carte') setTimeout(()=>{const m=document.getElementById('map');if(m)m.style.height='480px';initCarte()},200)
 
@@ -2981,7 +3067,49 @@ function renderStatsBatiments(){
     +'</tbody></table></div>'
 }
 
-// ── RECALCUL DES STATISTIQUES (protégé par mot de passe) ──
+// ── ÉVOLUTION DES COÛTS DANS LE TEMPS (par mois, filtrable par bâtiment) ──
+function renderHistoriqueCouts(){
+  const el=document.getElementById('histo-couts')
+  const selectBat=document.getElementById('histo-cout-bat')
+  if(!el||!selectBat) return
+
+  // Peupler la liste des bâtiments une seule fois (sans perdre la sélection en cours)
+  if(selectBat.options.length<=1 && allBats.length>0){
+    const current=selectBat.value
+    selectBat.innerHTML='<option value="">Tous les bâtiments</option>'+allBats.map(b=>'<option value="'+b.id+'">'+b.nom+'</option>').join('')
+    selectBat.value=current
+  }
+  const batId=selectBat.value
+
+  // 12 derniers mois, du plus ancien au plus récent
+  const mois=[]
+  const now=new Date()
+  for(let i=11;i>=0;i--){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1)
+    mois.push({label:d.toLocaleDateString('fr-FR',{month:'short',year:'2-digit'}),key:d.getFullYear()+'-'+d.getMonth(),total:0})
+  }
+  const moisParCle={}
+  mois.forEach(m=>moisParCle[m.key]=m)
+
+  allBons.filter(b=>b.statut==='termine' && b.date_fin && (!batId||b.batiment_id===batId)).forEach(b=>{
+    const d=new Date(b.date_fin)
+    const cle=d.getFullYear()+'-'+d.getMonth()
+    if(moisParCle[cle]) moisParCle[cle].total+=(b.cout_total||0)
+  })
+
+  const max=Math.max(...mois.map(m=>m.total),1)
+  const totalPeriode=mois.reduce((s,m)=>s+m.total,0)
+  el.innerHTML='<div style="display:flex;align-items:flex-end;gap:4px;height:140px;padding:8px 0">'
+    +mois.map(m=>'<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%">'
+      +(m.total>0?'<div style="font-size:10px;font-weight:600;color:var(--navy);margin-bottom:3px;white-space:nowrap">'+m.total.toFixed(0)+'€</div>':'')
+      +'<div style="width:100%;max-width:32px;background:'+(m.total>0?'var(--blue)':'var(--border)')+';border-radius:4px 4px 0 0;height:'+Math.max((m.total/max)*100,m.total>0?4:1)+'%"></div>'
+      +'<div style="font-size:10px;color:var(--text3);margin-top:6px">'+m.label+'</div>'
+      +'</div>').join('')
+    +'</div>'
+    +'<div style="text-align:right;font-size:13px;font-weight:700;color:var(--navy);border-top:1px solid var(--border);padding-top:10px;margin-top:4px">Total période : '+totalPeriode.toFixed(2)+' €</div>'
+}
+
+
 // Utile si le taux horaire d'un technicien ou le prix d'une pièce a été corrigé
 // après la clôture d'un bon : ça recalcule et resauvegarde le coût de tous les bons clôturés.
 async function ouvrirRecalculStats(){
@@ -2997,6 +3125,7 @@ async function ouvrirRecalculStats(){
   renderStatsCouts()
   renderStatsBatiments()
   renderStatsBonsListe()
+  renderHistoriqueCouts()
   showToast('✅ Statistiques recalculées ('+termines.length+' bons)')
 }
 
@@ -3531,15 +3660,16 @@ function showPage(name,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'))
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'))
   document.getElementById('page-'+name).classList.add('active')
-  const pageTitles2={dashboard:'Tableau de bord',bons:'Bons de travail',planning:'Planning',techniciens:'Techniciens',batiments:'Bâtiments',stats:'Statistiques',historique:'Historique',carte:'Carte des bâtiments'}
+  const pageTitles2={dashboard:'Tableau de bord',bons:'Bons de travail',planning:'Planning',techniciens:'Techniciens',batiments:'Bâtiments',stats:'Statistiques',historique:'Historique',carte:'Carte des bâtiments',acces:'Gestion des accès'}
   document.getElementById('page-title').textContent=pageTitles2[name]||name
   if(el) el.classList.add('active')
   closeSidebar()
   if(name==='bons'){rafraichirTout().then(()=>populateFilterBat())}
   if(name==='techniciens') renderTechs()
   if(name==='batiments') renderBatiments()
-  if(name==='stats'){renderStats();setTimeout(()=>{renderStatsCouts();renderStatsBatiments();renderStatsBonsListe()},100)}
+  if(name==='stats'){renderStats();setTimeout(()=>{renderStatsCouts();renderStatsBatiments();renderStatsBonsListe();renderHistoriqueCouts()},100)}
   if(name==='historique') renderHistorique()
+  if(name==='acces') renderAccesUtilisateurs()
   if(name==='carte') setTimeout(()=>{
     // Force map container to have proper dimensions before init
     const mapEl=document.getElementById('map')
