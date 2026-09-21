@@ -384,8 +384,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gray);color:va
       
       <!-- HISTORIQUE -->
       <div class="page" id="page-historique">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px">
           <div style="font-size:14px;color:var(--text2)">Bons clôturés — conservés 15 jours puis supprimés automatiquement</div>
+          <button class="btn btn-danger" style="font-size:12px;padding:7px 14px" onclick="supprimerTousLesBonsClotures()">🔒 Repartir sur une base propre (supprimer tous les bons clôturés)</button>
         </div>
         <div id="historique-list"></div>
       </div>
@@ -2216,6 +2217,23 @@ async function supprimerBonDepuisStats(bonId, titre){
   await loadBons();await loadBonPhotos()
   renderStats();renderStatsCouts();renderStatsBatiments();renderStatsBonsListe()
   showToast('🗑️ Bon supprimé définitivement')
+}
+
+// Repartir sur une base propre : supprime TOUS les bons clôturés (avec leurs photos, commentaires, pièces).
+// Les bons actifs (nouveau/planifié/en cours/en attente) ne sont jamais touchés.
+async function supprimerTousLesBonsClotures(){
+  const termines=allBons.filter(b=>b.statut==='termine')
+  if(termines.length===0){ showToast('Aucun bon clôturé à supprimer'); return }
+  const code=prompt('Code responsable requis pour supprimer définitivement les '+termines.length+' bon(s) clôturé(s) :')
+  if(code===null) return
+  if(code.trim().toUpperCase()!==CODE_SUPPRESSION){ showToast('Code incorrect','error'); return }
+  if(!confirm('⚠️ Supprimer DÉFINITIVEMENT les '+termines.length+' bon(s) clôturé(s), avec leurs photos, commentaires, pièces et statistiques associées ?\n\nLes bons actifs (nouveau, planifié, en cours, en attente) ne seront PAS touchés.\n\nCette action est irréversible.')) return
+  if(!confirm('Dernière confirmation : êtes-vous certain(e) ? Cette suppression est définitive et ne pourra pas être annulée.')) return
+  showToast('Suppression en cours… ('+termines.length+' bons)')
+  for(const b of termines){ await supprimerBonDefinitivement(b.id) }
+  await loadBons();await loadBonPhotos()
+  renderDashboard();renderBonsTable();renderStats();renderStatsCouts();renderStatsBatiments();renderStatsBonsListe();renderHistorique()
+  showToast('✅ '+termines.length+' bon(s) clôturé(s) supprimé(s) — base propre')
 }
 
 // ── LISTE DES BONS CLÔTURÉS (avec suppression protégée) ──
