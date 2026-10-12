@@ -1163,8 +1163,9 @@ let _mesTicketsCache=[]
 
 async function ouvrirDetailTicket(id){
   const bon = _mesTicketsCache.find(b=>b.id===id)
-  if(!bon){ console.error('Ticket non trouvé en cache, id=',id); return }
+  if(!bon){ alert('Erreur : ticket non trouvé (id='+id+')\nCache : '+_mesTicketsCache.length+' éléments'); return }
   const modal=document.getElementById('modal-ticket-detail')
+  if(!modal){ alert('Erreur : modal introuvable dans le DOM'); return }
   const statutBadge={
     nouveau:{label:'Nouveau',color:'var(--blue)',bg:'var(--blue-light)',icon:'🆕'},
     planifie:{label:'Planifié',color:'#1565C0',bg:'#E3F2FD',icon:'📅'},
