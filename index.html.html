@@ -1133,10 +1133,6 @@ async function renderMesDemandes(){
     normale:{label:'Normale',color:'#f57f17',bg:'#fffde7'},
     basse:{label:'Basse',color:'var(--green)',bg:'var(--green-light)'}
   }
-  listEl.onclick = function(e){
-    const btn = e.target.closest('.btn-voir-detail')
-    if(btn) ouvrirDetailTicket(btn.getAttribute('data-ticketid'))
-  }
   listEl.innerHTML = data.map(b=>{
     const st=statutBadge[b.statut]||{label:b.statut,color:'var(--text3)',bg:'var(--gray)',icon:''}
     const pr=prioBadge[b.priorite]||{label:b.priorite||'—',color:'var(--text3)',bg:'var(--gray)'}
@@ -1157,7 +1153,7 @@ async function renderMesDemandes(){
       +(estTermine?'<div style="background:'+st.bg+';border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:12px;color:'+st.color+';font-weight:600">'+st.icon+' Votre demande a été '+( b.statut==='termine'?'traitée et clôturée':'annulée')+'</div>':'')
       +'<div style="display:flex;justify-content:space-between;align-items:center">'
       +'<div style="font-size:11px;color:var(--text3)">Créé le '+new Date(b.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})+'</div>'
-      +'<button data-ticketid="'+b.id+'" class="btn-voir-detail" style="background:var(--blue-light);color:var(--blue);border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer">Voir les détails →</button>'
+      +'<button style="background:var(--blue-light);color:var(--blue);border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer" onclick="ouvrirDetailTicket(this.getAttribute(\'data-id\'))" data-id="'+b.id+'">Voir les détails →</button>'
       +'</div>'
       +'</div>'
   }).join('')
