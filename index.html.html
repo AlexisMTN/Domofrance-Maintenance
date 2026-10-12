@@ -188,8 +188,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gray);color:va
     </div>
   </div>
   <div style="max-width:640px;margin:0 auto;padding:20px 16px">
-    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:14px;font-size:15px;margin-bottom:20px" onclick="openModal('create')">+ Nouvelle demande</button>
-    <div style="font-weight:700;font-size:14px;color:var(--navy);margin-bottom:12px">Mes demandes enregistrées</div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:14px;font-size:15px;margin-bottom:16px" onclick="openModal('create')">+ Nouvelle demande</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-weight:700;font-size:14px;color:var(--navy)">Mes demandes</div>
+      <button onclick="renderMesDemandes()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:12px;color:var(--text2);cursor:pointer">↻ Actualiser</button>
+    </div>
     <div id="ms-liste"></div>
   </div>
 </div>
@@ -317,7 +320,29 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gray);color:va
       </div>
 
       <!-- MES TICKETS -->
-      
+
+      <!-- MODAL DÉTAIL TICKET (mode créateur) -->
+<div id="modal-ticket-detail" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:900;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)document.getElementById('modal-ticket-detail').style.display='none'">
+  <div style="background:#fff;border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto">
+    <div style="background:var(--navy);border-radius:16px 16px 0 0;padding:16px 20px;display:flex;justify-content:space-between;align-items:center">
+      <div style="color:#fff;font-weight:700;font-size:15px" id="td-titre">—</div>
+      <button onclick="document.getElementById('modal-ticket-detail').style.display='none'" style="background:none;border:none;color:rgba(255,255,255,.7);font-size:20px;cursor:pointer;padding:0 4px">✕</button>
+    </div>
+    <div style="padding:20px">
+      <div id="td-badges" style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px" id="td-infos"></div>
+      <div id="td-desc-bloc" style="margin-bottom:16px;display:none">
+        <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:6px">Description</div>
+        <div style="font-size:13px;color:var(--text2);background:var(--gray);border-radius:8px;padding:12px;line-height:1.6" id="td-desc"></div>
+      </div>
+      <div id="td-commentaires-bloc">
+        <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:10px">💬 Messages / Commentaires</div>
+        <div id="td-commentaires" style="font-size:13px;color:var(--text3)">Chargement…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
       <!-- CONTROLE REGLEMENTAIRE -->
       <div class="page" id="page-controle">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px">
@@ -1093,20 +1118,100 @@ async function renderMesDemandes(){
     listEl.innerHTML='<div style="color:var(--text3);font-size:13px;text-align:center;padding:20px">Aucune demande enregistrée pour le moment</div>'
     return
   }
-  const badges={nouveau:['Nouveau','var(--blue)','var(--blue-light)'],planifie:['Planifié','#1565C0','#E3F2FD'],en_cours:['En cours','var(--orange)','var(--orange-light)'],en_attente:['En attente','#EF6C00','#FFF3E0'],termine:['Terminé','var(--green)','var(--green-light)'],annule:['Annulé','var(--text3)','var(--gray)']}
+  const statutBadge={
+    nouveau:{label:'Nouveau',color:'var(--blue)',bg:'var(--blue-light)',icon:'🆕'},
+    planifie:{label:'Planifié',color:'#1565C0',bg:'#E3F2FD',icon:'📅'},
+    en_cours:{label:'En cours',color:'var(--orange)',bg:'var(--orange-light)',icon:'⚙️'},
+    en_attente:{label:'En attente',color:'#EF6C00',bg:'#FFF3E0',icon:'⏸️'},
+    termine:{label:'Terminé ✓',color:'var(--green)',bg:'var(--green-light)',icon:'✅'},
+    annule:{label:'Annulé',color:'var(--text3)',bg:'var(--gray)',icon:'❌'}
+  }
+  const prioBadge={
+    urgence:{label:'Urgence',color:'#b71c1c',bg:'#ffebee'},
+    haute:{label:'Haute',color:'#e65100',bg:'#fff3e0'},
+    normale:{label:'Normale',color:'#f57f17',bg:'#fffde7'},
+    basse:{label:'Basse',color:'var(--green)',bg:'var(--green-light)'}
+  }
   listEl.innerHTML = data.map(b=>{
-    const [label,color,bg]=badges[b.statut]||['—','var(--text3)','var(--gray)']
-    return '<div class="card" style="padding:14px 16px;margin-bottom:10px">'
-      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
-      +'<div><div style="font-weight:600;font-size:14px">'+b.titre+'</div>'
-      +'<div style="font-size:12px;color:var(--text3);margin-top:2px">'+(b.batiments?.nom||'—')+(b.batiments?.ville?', '+b.batiments.ville:'')+'</div>'
-      +(b.techniciens?'<div style="font-size:12px;color:var(--text3);margin-top:2px">👷 '+b.techniciens.prenom+' '+b.techniciens.nom+'</div>':'')
+    const st=statutBadge[b.statut]||{label:b.statut,color:'var(--text3)',bg:'var(--gray)',icon:''}
+    const pr=prioBadge[b.priorite]||{label:b.priorite||'—',color:'var(--text3)',bg:'var(--gray)'}
+    const estTermine=b.statut==='termine'||b.statut==='annule'
+    return '<div class="card" style="padding:16px;margin-bottom:12px;border-left:4px solid '+st.color+'">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px">'
+      +'<div style="flex:1">'
+      +'<div style="font-weight:700;font-size:14px;color:var(--text);margin-bottom:4px">'+b.titre+'</div>'
+      +'<div style="font-size:12px;color:var(--text3)">🏢 '+(b.batiments?.nom||'—')+(b.batiments?.ville?', '+b.batiments.ville:'')+'</div>'
       +'</div>'
-      +'<span style="background:'+bg+';color:'+color+';font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap">'+label+'</span>'
+      +'<span style="background:'+st.bg+';color:'+st.color+';font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0">'+st.icon+' '+st.label+'</span>'
       +'</div>'
-      +'<div style="font-size:11px;color:var(--text3);margin-top:8px">Créé le '+new Date(b.created_at).toLocaleDateString('fr-FR')+'</div>'
+      +'<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">'
+      +'<span style="background:'+pr.bg+';color:'+pr.color+';font-size:11px;font-weight:600;padding:3px 8px;border-radius:12px">Priorité : '+pr.label+'</span>'
+      +(b.techniciens?'<span style="background:#f3f4f6;color:var(--text2);font-size:11px;padding:3px 8px;border-radius:12px">👷 '+b.techniciens.prenom+' '+b.techniciens.nom+'</span>':'<span style="background:#f3f4f6;color:var(--text3);font-size:11px;padding:3px 8px;border-radius:12px">👷 Non assigné</span>')
+      +(b.zone?'<span style="background:#f3f4f6;color:var(--text2);font-size:11px;padding:3px 8px;border-radius:12px">📍 '+b.zone+'</span>':'')
+      +'</div>'
+      +(estTermine?'<div style="background:'+st.bg+';border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:12px;color:'+st.color+';font-weight:600">'+st.icon+' Votre demande a été '+( b.statut==='termine'?'traitée et clôturée':'annulée')+'</div>':'')
+      +'<div style="display:flex;justify-content:space-between;align-items:center">'
+      +'<div style="font-size:11px;color:var(--text3)">Créé le '+new Date(b.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})+'</div>'
+      +'<button onclick="ouvrirDetailTicket(\''+b.id+'\')" style="background:var(--blue-light);color:var(--blue);border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer">Voir les détails →</button>'
+      +'</div>'
       +'</div>'
   }).join('')
+}
+
+async function ouvrirDetailTicket(id){
+  const bon = (await sb.from('bons_travail').select('*, batiments(nom,ville), techniciens(prenom,nom)').eq('id',id).maybeSingle()).data
+  if(!bon) return
+  const modal=document.getElementById('modal-ticket-detail')
+  const statutBadge={
+    nouveau:{label:'Nouveau',color:'var(--blue)',bg:'var(--blue-light)',icon:'🆕'},
+    planifie:{label:'Planifié',color:'#1565C0',bg:'#E3F2FD',icon:'📅'},
+    en_cours:{label:'En cours',color:'var(--orange)',bg:'var(--orange-light)',icon:'⚙️'},
+    en_attente:{label:'En attente',color:'#EF6C00',bg:'#FFF3E0',icon:'⏸️'},
+    termine:{label:'Terminé',color:'var(--green)',bg:'var(--green-light)',icon:'✅'},
+    annule:{label:'Annulé',color:'var(--text3)',bg:'var(--gray)',icon:'❌'}
+  }
+  const prioBadge={
+    urgence:{label:'🔴 Urgence',color:'#b71c1c',bg:'#ffebee'},
+    haute:{label:'🟠 Haute',color:'#e65100',bg:'#fff3e0'},
+    normale:{label:'🟡 Normale',color:'#f57f17',bg:'#fffde7'},
+    basse:{label:'🟢 Basse',color:'var(--green)',bg:'var(--green-light)'}
+  }
+  const st=statutBadge[bon.statut]||{label:bon.statut,color:'var(--text3)',bg:'var(--gray)',icon:''}
+  const pr=prioBadge[bon.priorite]||{label:bon.priorite||'—',color:'var(--text3)',bg:'var(--gray)'}
+  document.getElementById('td-titre').textContent=bon.titre||'—'
+  document.getElementById('td-badges').innerHTML=
+    '<span style="background:'+st.bg+';color:'+st.color+';font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px">'+st.icon+' '+st.label+'</span>'
+    +'<span style="background:'+pr.bg+';color:'+pr.color+';font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px">'+pr.label+'</span>'
+  document.getElementById('td-infos').innerHTML=[
+    ['🏢 Bâtiment',(bon.batiments?.nom||'—')+(bon.batiments?.ville?', '+bon.batiments.ville:'')],
+    ['📍 Zone / Lieu',bon.zone||'—'],
+    ['🔧 Catégorie',bon.categorie||'—'],
+    ['👷 Technicien',bon.techniciens?(bon.techniciens.prenom+' '+bon.techniciens.nom):'Non assigné'],
+    ['📅 Créé le',new Date(bon.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})],
+    ['🔢 N° de bon',bon.numero?'#'+bon.numero:'—']
+  ].map(([k,v])=>'<div style="background:var(--gray);border-radius:8px;padding:10px 12px"><div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;margin-bottom:3px">'+k+'</div><div style="font-size:13px;font-weight:600;color:var(--text)">'+v+'</div></div>').join('')
+  const descBloc=document.getElementById('td-desc-bloc')
+  if(bon.description){
+    document.getElementById('td-desc').textContent=bon.description
+    descBloc.style.display='block'
+  } else {
+    descBloc.style.display='none'
+  }
+  document.getElementById('td-commentaires').innerHTML='<div style="font-size:12px;color:var(--text3)">Chargement…</div>'
+  modal.style.display='flex'
+  const {data:comments}=await sb.from('commentaires').select('*').eq('bon_id',id).order('created_at',{ascending:true})
+  const comEl=document.getElementById('td-commentaires')
+  if(!comments||comments.length===0){
+    comEl.innerHTML='<div style="font-size:13px;color:var(--text3);font-style:italic;padding:10px 0">Aucun message pour le moment</div>'
+  } else {
+    comEl.innerHTML=comments.map(c=>{
+      const dt=new Date(c.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})
+      return '<div style="background:var(--gray);border-radius:10px;padding:10px 14px;margin-bottom:8px">'
+        +'<div style="font-size:11px;font-weight:700;color:var(--text3);margin-bottom:4px">'+c.auteur+' · '+dt+'</div>'
+        +'<div style="font-size:13px;color:var(--text);line-height:1.5">'+c.contenu+'</div>'
+        +'</div>'
+    }).join('')
+  }
 }
 
 // ── GESTION DES ACCÈS (visible uniquement en mode admin) ──
