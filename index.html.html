@@ -1114,6 +1114,7 @@ async function renderMesDemandes(){
   const listEl = document.getElementById('ms-liste')
   if(!listEl) return
   if(error){ listEl.innerHTML='<div style="color:var(--text3);font-size:13px;text-align:center;padding:20px">Erreur de chargement</div>'; return }
+  _mesTicketsCache = data || []
   if(!data || data.length===0){
     listEl.innerHTML='<div style="color:var(--text3);font-size:13px;text-align:center;padding:20px">Aucune demande enregistrée pour le moment</div>'
     return
@@ -1158,9 +1159,11 @@ async function renderMesDemandes(){
   }).join('')
 }
 
+let _mesTicketsCache=[]
+
 async function ouvrirDetailTicket(id){
-  const bon = (await sb.from('bons_travail').select('*, batiments(nom,ville), techniciens(prenom,nom)').eq('id',id).maybeSingle()).data
-  if(!bon) return
+  const bon = _mesTicketsCache.find(b=>b.id===id)
+  if(!bon){ console.error('Ticket non trouvé en cache, id=',id); return }
   const modal=document.getElementById('modal-ticket-detail')
   const statutBadge={
     nouveau:{label:'Nouveau',color:'var(--blue)',bg:'var(--blue-light)',icon:'🆕'},
